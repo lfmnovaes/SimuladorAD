@@ -32,17 +32,18 @@ class Simulador(object):
         self.rodada_atual = -1 #-1 para fase transiente
 
         ##### LISTAS #####
-        self.lista_de_eventos = [] #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saídas
+        self.eventos = [] #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saídas
         self.fila_de_clientes = [] #lista que armazenará clientes até serem atendidos
         self.todos_clientes_atendidos = [] #lista de todos os clientes atendidos
         self.qtt_pessoas_fila_por_rodada = [] #lista de pessoas na fila de espera por rodada
         self.E_W_por_rodada = [] #tempo médio gasto na fila de espera por rodada
         self.E_Nq_por_rodada = [] #tamanho médio da fila de espera por rodada
+        self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
+
         self.clientes_na_fila_evento_anterior = 0
         self.tempo_evento_anterior = 0.0
         self.tempo_inicio_rodada = 0.0
         self.area_clientes_tempo = 0 #cálculo incremental da área a cada chegada na fila e a cada entrada em serviço
-        self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
 
     def simulaTempoExponencial(self, taxa):
         r = random.random()
@@ -57,8 +58,8 @@ class Simulador(object):
         self.E_Nq_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
 
     def inserirEventoEmOrdem(self, evento):
-        self.lista_de_eventos.append(evento)
-        self.lista_de_eventos = sorted(self.lista_de_eventos, key=lambda evento: evento.tempo_evento)
+        self.eventos.append(evento)
+        self.eventos = sorted(self.eventos, key=lambda evento: evento.tempo_evento)
 
     def geraEventoChegada(self, cliente):
         tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_chegada)
@@ -89,7 +90,7 @@ class Simulador(object):
     def iniciaProcesso(self):
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
-            evento_atual = self.lista_de_eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
+            evento_atual = self.eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
             self.clientes_na_fila_evento_anterior = len(self.fila_de_clientes)
             if evento_atual.tipo_de_evento == "evento_chegada": #testa para ver o tipo de evento que está sendo tratado
                 self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
@@ -157,25 +158,22 @@ if __name__ == '__main__':
 
             lowerMW, upperMW, centerMW, aprovadoMW = c.ICMedia(E_W)
             lowerMNq, upperMNq, centerMNq, aprovadoMNq = c.ICMedia(E_Nq)
-            lowerVW, upperVW, centerVW, aprovadoVW = c.ICDaVariancia(E_W)
-            lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICDaVariancia(E_Nq)
+            lowerVW, upperVW, centerVW, aprovadoVW = c.ICVariancia(E_W)
+            lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICVariancia(E_Nq)
 
             if (aprovadoMW and aprovadoVW and aprovadoMNq and aprovadoVNq):
-                print(f'Resultados da simulação com lambda = {str(lamb)}, k = {str(k)} e disciplina = {disciplina}')
+                print(f'Resultados da simulação com lambda = {str(lamb)}, k = {str(k)} e disciplina {disciplina.upper()}')
                 print(f'')
-                print(f'Tempo médio de espera em fila = {str(centerMW)}')
-                print(f'I.C. de espera em fila = {str(lowerMW)} até {str(upperMW)}')
-                print(f'Tamanho do I.C. do tempo médio = {str(upperMW-lowerMW)}')
-                print(f'')
-                print(f'Variância média de espera em fila = {str(centerVW)}')
-                print(f'I.C. da variância do tempo em fila = {str(lowerVW)} ate {str(upperVW)}')
-                print(f'')
+                print(f'Tempo médio de espera na fila = {str(centerMW)}')
+                print(f'I.C. de espera na fila = {str(lowerMW)} até {str(upperMW)}')
+                print(f'Tamanho do I.C. do tempo médio na fila = {str(upperMW-lowerMW)}')
+                print(f'Variância média de espera na fila = {str(centerVW)}')
+                print(f'I.C. da variância do tempo na fila = {str(lowerVW)} até {str(upperVW)}')
                 print(f'Nq médio da fila = {str(centerMNq)}')
                 print(f'I.C. de Nq = {str(lowerMNq)} até {str(upperMNq)}')
-                print(f'')
                 print(f'Variância média de Nq = {str(centerVW)}')
-                print(f'I.C. da variância de Nq = {str(lowerVW)} ate {str(upperVW)}')
-                print(f'------------')
+                print(f'I.C. da variância de Nq = {str(lowerVW)} até {str(upperVW)}')
+                print(f'')
 
                 c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
