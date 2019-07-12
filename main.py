@@ -157,8 +157,8 @@ if __name__ == '__main__':
 
             lowerMW, upperMW, centerMW, aprovadoMW = c.ICDaMedia(E_W)
             lowerMNq, upperMNq, centerMNq, aprovadoMNq = c.ICDaMedia(E_Nq)
-            lowerVW, upperVW, centerVW, aprovadoVW = c.ICDaVariacia(E_W)
-            lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICDaVariacia(E_Nq)
+            lowerVW, upperVW, centerVW, aprovadoVW = c.ICDaVariancia(E_W)
+            lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICDaVariancia(E_Nq)
 
             if (aprovadoMW and aprovadoVW and aprovadoMNq and aprovadoVNq):
                 print(f'Resultados da simulação com lambda = {str(lamb)}, k = {str(k)} e disciplina = {disciplina}')
