@@ -9,34 +9,34 @@ class Calculadora(object):
     def __init__(self):
         self.aprovado = ""
 
-    def ICDaMedia(self, mean_list):
-        tStudent = 1.645   #T-student para mais de 120 amostras
+    def ICDaMedia(self, lista_de_medias):
+        # T-student para 120 amostras
+        tStudent = 1.645
+        # Quantidade de amostras
+        n = len(lista_de_medias)
+        # Média das amostras
+        media = np.sum(lista_de_medias)/n
 
-        #qtd de amostras
-        n = len(mean_list)
+        # Variância amostral:
+        # usando a forma:
+        # Soma((Media - Media das amostras)^2) = S^2
+        s = math.sqrt(np.sum([(float(element) - float(media))**2 for element in lista_de_medias])/(n-1.0))
 
-        #média amostral
-        mean = np.sum(mean_list)/n
+        # IC pela T-student
+        inf = media - (tStudent*(s/math.sqrt(n)))
+        sup = media + (tStudent*(s/math.sqrt(n)))
+        # Centro dos intervalos
+        centro = inf + (inf - sup)/2.0
 
-        #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
-        s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in mean_list])/(n-1.0))
-
-        #calculo do Intervalo de Confiança pela T-student
-        lower = mean - (tStudent*(s/math.sqrt(n)))
-        upper = mean + (tStudent*(s/math.sqrt(n)))
-
-        center = lower + (upper - lower)/2.0
-
-        if (center/10.0 < (upper - lower)):
-            #print center/10.0
-            #print upper - lower
-            self.aprovado = False
-            #print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
+        # Aqui nós verificamos se obtivemos uma precisão de 5%
+        # Se intervalo for maior do que 10% do valor central, não atingiu precisão adequada
+        if (centro/10.0 < (inf - sup)):
+            self.ok = False
         else:
-            self.aprovado = True
+            self.ok = True
 
         #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
-        return (lower, upper, center, self.aprovado)
+        return (inf, sup, centro, self.ok)
 
 
     def ICDaVariacia(self, mean_list):
