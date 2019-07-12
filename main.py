@@ -155,26 +155,26 @@ if __name__ == '__main__':
             tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
             pessoas_na_fila = s.qtt_pessoas_fila_por_rodada
 
-            lowerMW, upperMW, centerMW, aprovadoMW = c.ICMedia(E_W)
-            lowerMNq, upperMNq, centerMNq, aprovadoMNq = c.ICMedia(E_Nq)
-            lowerVW, upperVW, centerVW, aprovadoVW = c.ICDaVariancia(E_W)
-            lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICDaVariancia(E_Nq)
+            infMW, supMW, centerMW, okMW = c.ICMedia(E_W)
+            infMNq, supMNq, centroMNq, okMNq = c.ICMedia(E_Nq)
+            infVW, supVW, centroVW, okVW = c.ICDaVariancia(E_W)
+            infVNq, supVNq, centroVNq, okVNq = c.ICDaVariancia(E_Nq)
 
-            if (aprovadoMW and aprovadoVW and aprovadoMNq and aprovadoVNq):
+            if (okMW and okVW and okMNq and okVNq):
                 print(f'Resultados da simulação com lambda = {str(lamb)}, k = {str(k)} e disciplina = {disciplina}')
                 print(f'')
                 print(f'Tempo médio de espera em fila = {str(centerMW)}')
-                print(f'I.C. de espera em fila = {str(lowerMW)} até {str(upperMW)}')
-                print(f'Tamanho do I.C. do tempo médio = {str(upperMW-lowerMW)}')
+                print(f'I.C. de espera em fila = {str(infMW)} até {str(supMW)}')
+                print(f'Tamanho do I.C. do tempo médio = {str(supMW-infMW)}')
                 print(f'')
-                print(f'Variância média de espera em fila = {str(centerVW)}')
-                print(f'I.C. da variância do tempo em fila = {str(lowerVW)} ate {str(upperVW)}')
+                print(f'Variância média de espera em fila = {str(centroVW)}')
+                print(f'I.C. da variância do tempo em fila = {str(infVW)} ate {str(supVW)}')
                 print(f'')
-                print(f'Nq médio da fila = {str(centerMNq)}')
-                print(f'I.C. de Nq = {str(lowerMNq)} até {str(upperMNq)}')
+                print(f'Nq médio da fila = {str(centroMNq)}')
+                print(f'I.C. de Nq = {str(infMNq)} até {str(supMNq)}')
                 print(f'')
-                print(f'Variância média de Nq = {str(centerVW)}')
-                print(f'I.C. da variância de Nq = {str(lowerVW)} ate {str(upperVW)}')
+                print(f'Variância média de Nq = {str(centroVW)}')
+                print(f'I.C. da variância de Nq = {str(infVW)} ate {str(supVW)}')
                 print(f'')
                 print(f'------ Tempo de Simulação: {(datetime.now() - inicioSim)} ------')
 
