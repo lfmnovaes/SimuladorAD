@@ -1,13 +1,12 @@
 import math
-#from scipy import stats
 from scipy.stats import chi2
-#import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 class Calculadora(object):
     def __init__(self):
         self.aprovado = ""
+        self.ok = True
 
     def ICDaMedia(self, lista_de_medias):
         # T-student para 120 amostras
@@ -76,6 +75,4 @@ class Calculadora(object):
         ax.plot(range(x), y)
         ax.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
         ax.grid()
-
         fig.savefig(saida + '.png')
-        #plt.show()

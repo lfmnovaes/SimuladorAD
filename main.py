@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 args = parser.parse_args()
 
-if (args.disciplina.lower() == "lcfs"):
+if args.disciplina.lower() == "lcfs":
     print(f'Executando com disciplina LCFS')
     disciplina = 'lcfs'
 else:
@@ -175,16 +175,15 @@ if __name__ == '__main__':
                 print(f'')
                 print(f'Variância média de Nq = {str(centerVW)}')
                 print(f'I.C. da variância de Nq = {str(lowerVW)} ate {str(upperVW)}')
-                print(f'')
-                print(f'------ Tempo de Simulação: {(datetime.now() - inicioSim)} ------')
+                print(f'------------')
 
-                #c.plotGrafico(x, y, x_legenda, y_legenda)
                 c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
 
                 #print(f'tempos: {len(tempos)} - e_nq: {len(E_Nq)} - e_w: {len(E_W)}')
                 #print(f'tempos: {tempos[:10]} - e_nq: {E_Nq[:10]} - e_w: {E_W[:10]}')
             else:
-                print(f'confiança não foi obtida, incrementando k em 100 na próxima iteração')
+                print(f'confiança não foi obtida, incrementando k em 100 para a próxima iteração')
                 kmins.append(k+100)
                 print(f'novo valor de k = {str(k+100)}')
+    print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
