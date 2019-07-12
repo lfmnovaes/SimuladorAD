@@ -6,8 +6,11 @@ import math
 import random
 from scipy import stats
 from scipy.stats import chi2
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+import os
 
 from controllers.agendador import *
 from controllers.calculadora import *
@@ -19,7 +22,6 @@ from models.cliente import *
 #filaFCFS = Fila(0.2, 1, 100, 3200, 0, 0.95, 0.05, 0.2)
 
 disciplina = 'fcfs'
-
 parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 args = parser.parse_args()
@@ -307,8 +309,11 @@ def plotGrafico(y, x):
     ax.plot(y, x_temp)
     ax.set(xlabel='rodada', ylabel='qtt de pessoas na fila', title='Simulador M/M/1')
     ax.grid()
-    fig.savefig('plot.png')
-    plt.show()
+
+    my_path = os.path.abspath(__file__)
+    my_file = 'plot.png'
+    fig.savefig(os.path.join(my_path, my_file))
+    #plt.show()
 
 ############# CALCULADORA ###############
 
