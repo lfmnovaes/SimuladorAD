@@ -2,19 +2,15 @@
 
 import argparse
 import datetime
-import math
+#import math
 import random
-from scipy import stats
-from scipy.stats import chi2
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
+#from scipy import stats
+#from scipy.stats import chi2
+#import matplotlib
+#import matplotlib.pyplot as plt
+#import numpy as np
 
-import os
-
-from controllers.agendador import *
 from controllers.calculadora import *
-from models.servidor import *
 from models.evento import *
 from models.cliente import *
 
@@ -55,10 +51,10 @@ class Simulador(object):
         self.qtd_total_pessoas_fila = []
 
         #listas que irao guardar metricas
-        self.W_barra_por_rodada = []
+        self.E_W_por_rodada = []
 
         #variaveis necessarias para o calculo de nq
-        self.Nq_barra_por_rodada = []
+        self.E_Nq_por_rodada = []
         self.clientes_na_fila_evento_anterior = 0
         self.tempo_evento_anterior = 0.0
         self.tempo_inicio_rodada = 0.0
@@ -83,7 +79,7 @@ class Simulador(object):
     #funcao para calcular a quantidade media de pessoas na fila da mm1
     def calculaNq(self):
         tempo_da_rodada = self.tempo - self.tempo_inicio_rodada
-        self.Nq_barra_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
+        self.E_Nq_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
 
     def inserirEventoEmOrdem(self, evento):
         self.lista_de_eventos.append(evento)
@@ -106,19 +102,19 @@ class Simulador(object):
         #média amostral
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         mean = np.sum(tempos_de_fila)/n
-        #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
+        #variância amostral = SUM((Media - Media Amostral)^2) = S^2
         s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
-        #calculo do Intervalo de Confiança pela T-student
+        #calculo do I.C. pela T-student
         lower = mean - (percentil*(s/math.sqrt(n)))
         upper = mean + (percentil*(s/math.sqrt(n)))
         center = lower + (upper - lower)/2
         if center/10 < (upper - lower):
             self.transiente = False
 
-    def adicionaWBarraDaRodada(self):
+    def adicionaE_WDaRodada(self):
         n = float(len(self.clientes_atendidos_rodada))
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        self.W_barra_por_rodada.append(np.sum(tempos_de_fila)/n)
+        self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
 
     def iniciaProcesso(self):
         #cria o primeiro evento de chegada para dar inicio ao simulador
@@ -167,7 +163,7 @@ class Simulador(object):
 
             #depois que um dos 2 eventos ocorreu, eu irei calcular a area de clientes que esses eventos provocaram
 
-            #faz calculo da area de pessoas por tempo para ser utilizado para calcular Nq_barra_por_rodada
+            #faz calculo da area de pessoas por tempo para ser utilizado para calcular E_Nq_por_rodada
             self.somaArea()
 
             #atualiza o valor do tempo do evento que acabou de acontecer, o proximo evento anterior
@@ -210,7 +206,7 @@ class Simulador(object):
                     #gera metricas e estatisticas
                     self.calculaNq()
                     #print "clientes atendidos na rodada: "+str(len(self.clientes_atendidos_rodada))
-                    self.adicionaWBarraDaRodada()
+                    self.adicionaE_WDaRodada()
 
                     # limpando os clientes atendidos nesta rodada
                     self.clientes_atendidos_rodada = []
@@ -220,102 +216,6 @@ class Simulador(object):
                     # proxima rodada
                     #print "rodada: " + str(self.rodada_atual)
                     self.rodada_atual += 1
-
-############# CALCULADORA ###############
-def ICDaMedia(mean_list):
-    #percentil da T-student para mais de 120 amostras
-    percentil = 1.645
-
-    aprovado = ""
-
-    #qtd de amostras
-    n = len(mean_list)
-
-    #média amostral
-    mean = np.sum(mean_list)/n
-
-    #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
-    s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in mean_list])/(n-1.0))
-
-    #calculo do Intervalo de Confiança pela T-student
-    lower = mean - (percentil*(s/math.sqrt(n)))
-    upper = mean + (percentil*(s/math.sqrt(n)))
-
-    center = lower + (upper - lower)/2.0
-
-    if (center/10.0 < (upper - lower)):
-        #print center/10.0
-        #print upper - lower
-        aprovado = False
-        #print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
-    else:
-        aprovado = True
-
-    #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
-    return (lower, upper, center, aprovado)
-
-
-def ICDaVariacia(mean_list):
-    #esse método utilizará a formula do qui-quadrado para medir a variancia
-
-    #qtd de amostras
-    n = len(mean_list)
-
-    aprovado = ""
-
-    #média amostral
-    mean = np.sum(mean_list)/n
-
-    #dados obtidos na tabela da qui-quadrada para alpha=0.5, alpha/2 = 0.25
-    #Qalpha2 = 74.222
-    #Q1menosalpha2 = 129.561
-
-    #como na tabela de qui-quadrado só temos ate 100 graus de liberdade, tivemos que usar uma funcao
-    #auxiliar para calcular o valor dela para n = 3200
-
-    Qalpha2 = chi2.isf(q=0.025, df=n-1)
-    Q1menosalpha2 = chi2.isf(q=0.975, df=n-1)
-
-    #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
-    s_quadrado = np.sum([(float(element) - float(mean))**2 for element in mean_list])/(n-1.0)
-
-    #calculo do Intervalo de Confiança pela qui-quadrado
-    lower = (n-1)*s_quadrado/Q1menosalpha2
-    upper = (n-1)*s_quadrado/Qalpha2
-
-    center = lower + (upper - lower)/2.0
-
-    if center/10.0 < (upper - lower):
-        #print center/10.0
-        #print upper - lower
-        aprovado = False
-        #print "teste IC da variancia não obteve precisao de 5%, intervalo maior do que 10% do valor central"
-    else:
-        aprovado = True
-
-    #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
-    return (lower, upper, center, aprovado)
-
-
-#a matriz de entrada desta funcao deve ter em cada linha tuplas com a (quantidade de pessoas) ou (tempo medio no sistema) pelo periodo de cada evento
-#e cada linha deve ser representativa da execucao de todo o sistema do ro respectivamente 0.2, 0.4, 0.6, 0.8 e 0.9
-#def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
-def plotGrafico(y, x):
-    #for ro_metrics in matriz_de_metricas_por_ro:
-    #    plt.plot(*zip(*ro_metrics))
-    #plt.legend(['ro = 0.2', 'ro = 0.4', 'ro = 0.6', 'ro = 0.8', 'ro = 0.9'], loc='upper left')
-    fig, ax = plt.subplots()
-    x_temp = range(len(y))
-    ax.plot(y, x_temp)
-    ax.set(xlabel='rodada', ylabel='qtt de pessoas na fila', title='Simulador M/M/1')
-    ax.grid()
-
-    my_path = os.path.abspath(__file__)
-    my_file = 'plot.png'
-    fig.savefig(os.path.join(my_path, my_file))
-    #plt.show()
-
-############# CALCULADORA ###############
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9]
@@ -335,55 +235,49 @@ if __name__ == '__main__':
             for k in kmins:
                 #self, tx_chegada: float, tx_servico: float, k: int, n: int, disciplina: int, IC: float, precisao: float, utilizacao: float):
                 s = Simulador(lamb, mu, k, n_rodadas, disciplina)
+                c = Calculadora()
                 s.iniciaProcesso()
 
-                #testando qualquer variavel para ver a corretude do simulador
-                nqbarra = s.Nq_barra_por_rodada
-                wbarra = s.W_barra_por_rodada
+                E_Nq = s.E_Nq_por_rodada
+                E_W = s.E_W_por_rodada
 
                 tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
                 pessoas_na_fila = s.qtd_total_pessoas_fila
 
-                lowerMW, upperMW, centerMW, aprovadoMW = ICDaMedia(wbarra)
-                lowerMNq, upperMNq, centerMNq, aprovadoMNq = ICDaMedia(nqbarra)
-                lowerVW, upperVW, centerVW, aprovadoVW = ICDaVariacia(wbarra)
-                lowerVNq, upperVNq, centerVNq, aprovadoVNq = ICDaVariacia(nqbarra)
+                lowerMW, upperMW, centerMW, aprovadoMW = c.ICDaMedia(E_W)
+                lowerMNq, upperMNq, centerMNq, aprovadoMNq = c.ICDaMedia(E_Nq)
+                lowerVW, upperVW, centerVW, aprovadoVW = c.ICDaVariacia(E_W)
+                lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICDaVariacia(E_Nq)
 
                 if (aprovadoMW and aprovadoVW and aprovadoMNq and aprovadoVNq):
 
                     print(f'Resultados da simulação com lambda = {str(lamb)} e k = {str(k)}')
-                    #print(f'media amostral = {str(np.mean(wbarra)}')
+                    #print(f'media amostral = {str(np.mean(E_W)}')
                     print(f'')
-                    #item a
                     print(f'Tempo médio de espera em fila = {str(centerMW)}')
-                    print(f'intervalo de confiança da espera em fila = {str(lowerMW)} até {str(upperMW)}')
-                    print(f'tamanho do intervalo de confiança do tempo médio = {str(upperMW-lowerMW)}')
+                    print(f'I.C. da espera em fila = {str(lowerMW)} até {str(upperMW)}')
+                    print(f'tamanho do I.C. do tempo médio = {str(upperMW-lowerMW)}')
                     print(f'')
-
-                    #item b
-                    print(f'Variancia média de espera em fila = {str(centerVW)}')
-                    print(f'intervalo de confiança da variancia do tempo em fila = {str(lowerVW)} ate {str(upperVW)}')
+                    print(f'Variância média de espera em fila = {str(centerVW)}')
+                    print(f'I.C. da variância do tempo em fila = {str(lowerVW)} ate {str(upperVW)}')
                     print(f'')
-
-                    #item c
                     print(f'Nq médio da fila = {str(centerMNq)}')
-                    print(f'intervalo de confiança de Nq = {str(lowerMNq)} ate {str(upperMNq)}')
-                    print(f'tamanho do intervalo de confianca do tempo medio = {str(upperMW-lowerMW)}')
+                    print(f'I.C. de Nq = {str(lowerMNq)} até {str(upperMNq)}')
                     print(f'')
-
-                    #item d
-                    print(f'Variancia média de Nq = {str(centerVW)}')
-                    print(f'intervalo de confiança da variancia de Nq = {str(lowerVW)} ate {str(upperVW)}')
+                    print(f'Variância média de Nq = {str(centerVW)}')
+                    print(f'I.C. da variância de Nq = {str(lowerVW)} ate {str(upperVW)}')
                     print(f'')
 
                     #fim da simulacao
                     print(f'Fim da simulação com lamb = {str(lamb)}, k = {str(k)}, disciplina = {disciplina}')
                     print(f'-------------------------------------')
 
-                    #plotGrafico(s.qtd_total_pessoas_fila, s.todos_clientes_atendidos)
+                    #c.plotGrafico(x, y, x_legenda, y_legenda)
+                    c.plotGrafico(n_rodadas, E_Nq, "rodadas", "E_Nq", "plot1")
+                    c.plotGrafico(n_rodadas, E_W, "rodadas", "E_W", "plot2")
 
-                    #print(f'qtd total: {len(s.qtd_total_pessoas_fila)} - todos clientes: {len(s.todos_clientes_atendidos)}')
-                    #print(f'clientes: {s.qtd_total_pessoas_fila[:10]} - clientesobjeto: {s.todos_clientes_atendidos[:10]}')
+                    #print(f'tempos: {len(tempos)} - e_nq: {len(E_Nq)} - e_w: {len(E_W)}')
+                    #print(f'tempos: {tempos[:10]} - e_nq: {E_Nq[:10]} - e_w: {E_W[:10]}')
 
                 else:
                     #significa que a quantidade minima de eventos por rodada nao foi o suficiente para gerar os resultados esperados
