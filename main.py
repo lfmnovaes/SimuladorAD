@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
-import datetime
 import random
+from datetime import datetime
 
 from controllers.calculadora import *
 from models.evento import *
@@ -26,14 +26,13 @@ class Simulador(object):
         self.tx_servico = mu
         self.min_k = k
         self.n_rodadas = n_rodadas
-        self.disciplina = disciplina    #FCFS ou LCFS
+        self.disciplina = disciplina #FCFS ou LCFS
         self.tempo = 0.0
         self.servidor_ocupado = False
-        self.rodada_atual = -1          #-1 para fase transiente
+        self.rodada_atual = -1 #-1 para fase transiente
 
         ##### LISTAS #####
-        #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saidas
-        self.lista_de_eventos = []
+        self.lista_de_eventos = [] #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saídas
         self.fila_de_clientes = [] #lista que armazenará clientes até serem atendidos
         self.todos_clientes_atendidos = [] #lista de todos os clientes atendidos
         self.qtt_pessoas_fila_por_rodada = [] #lista de pessoas na fila de espera por rodada
@@ -142,6 +141,7 @@ if __name__ == '__main__':
     mu = 1
     kmins = [150]
     n_rodadas = 3200
+    inicioSim = datetime.now()
 
     for lamb in valores_rho:
         for k in kmins:
@@ -176,15 +176,14 @@ if __name__ == '__main__':
                 print(f'Variância média de Nq = {str(centerVW)}')
                 print(f'I.C. da variância de Nq = {str(lowerVW)} ate {str(upperVW)}')
                 print(f'')
-                print(f'-------------------------------------')
+                print(f'------ Tempo de Simulação: {(datetime.now() - inicioSim)} ------')
 
                 #c.plotGrafico(x, y, x_legenda, y_legenda)
-                c.plotGrafico(n_rodadas, E_Nq, "rodadas", "E_Nq", "plot1")
-                c.plotGrafico(n_rodadas, E_W, "rodadas", "E_W", "plot2")
+                c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
+                c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
 
                 #print(f'tempos: {len(tempos)} - e_nq: {len(E_Nq)} - e_w: {len(E_W)}')
                 #print(f'tempos: {tempos[:10]} - e_nq: {E_Nq[:10]} - e_w: {E_W[:10]}')
-
             else:
                 print(f'confiança não foi obtida, incrementando k em 100 na próxima iteração')
                 kmins.append(k+100)
