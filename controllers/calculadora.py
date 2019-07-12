@@ -5,10 +5,9 @@ import numpy as np
 
 class Calculadora(object):
     def __init__(self):
-        self.aprovado = ""
-        self.ok = True
+        self.ok = ""
 
-    def ICDaMedia(self, lista_de_medias):
+    def ICMedia(self, lista_de_medias):
         # T-student para 120 amostras
         tStudent = 1.645
         # Quantidade de amostras
