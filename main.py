@@ -2,12 +2,12 @@
 
 import argparse
 import datetime
-from scipy import stats
 import math
 import random
+from scipy import stats
 from scipy.stats import chi2
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from controllers.agendador import *
 from controllers.calculadora import *
@@ -36,15 +36,12 @@ class Simulador(object):
         self.tx_servico = mu
         self.min_k = k
         self.n_rodadas = n_rodadas
-        
-        #FCFS ou LCFS
-        self.disciplina = disciplina
-
+        self.disciplina = disciplina    #FCFS ou LCFS
         self.tempo = 0.0
         self.servidor_ocupado = False
-        self.rodada_atual = -1      #-1 para fase transiente
+        self.rodada_atual = -1          #-1 para fase transiente
 
-        #listas do Simulador
+        ##### LISTAS #####
         #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saidas
         self.lista_de_eventos = []
 
@@ -72,7 +69,7 @@ class Simulador(object):
 
     def simulaTempoExponencial(self, taxa):
         r = random.random()
-        # podemos utilizar dessa forma optimizada, pois tanto 1-r, quanto r sao numeros aleatorios de 0 a 1, dessa forma,
+        # podemos utilizar dessa forma otimizada, pois tanto 1-r, quanto r sao numeros aleatorios de 0 a 1, dessa forma,
         # economizamos 1 operacao de subtracao por numero gerado
         tempo = (-1.0 * math.log(r)) / (taxa + 0.0)
         return tempo
@@ -99,7 +96,6 @@ class Simulador(object):
         tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_servico)
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
-
     def testeFaseTransiente(self):
         #percentil da T-student para mais de 120 amostras
         percentil = 1.645
@@ -109,7 +105,7 @@ class Simulador(object):
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         mean = np.sum(tempos_de_fila)/n
         #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
-        s = math.sqrt(np.sum( [(float(element) - float(mean))**2 for element in tempos_de_fila] ) / (n-1.0))
+        s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
         #calculo do Intervalo de Confiança pela T-student
         lower = mean - (percentil*(s/math.sqrt(n)))
         upper = mean + (percentil*(s/math.sqrt(n)))
@@ -120,8 +116,7 @@ class Simulador(object):
     def adicionaWBarraDaRodada(self):
         n = float(len(self.clientes_atendidos_rodada))
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        self.W_barra_por_rodada.append( np.sum(tempos_de_fila) / n )
-
+        self.W_barra_por_rodada.append(np.sum(tempos_de_fila)/n)
 
     def iniciaProcesso(self):
         #cria o primeiro evento de chegada para dar inicio ao simulador
@@ -200,15 +195,12 @@ class Simulador(object):
 
             if len(self.clientes_atendidos_rodada) >= self.min_k:
                 if self.transiente:
-                    #print "teste transiente"
                     self.testeFaseTransiente()
-                    #print "fase transiente"
-                    #print self.transiente
                     #caso chegue ao fim da fase transiente, entao comecamos a rodada 0
                     #estarei estabelecendo um fim forcado para a fase transiente caso os tempos nao consigam convergir!
                     #esse tempo será o equivalente a 10 vezes o tamanho da rodada
                     if not self.transiente or len(self.clientes_atendidos_rodada) > (10*self.min_k):
-                        self.rodada_atual +=1
+                        self.rodada_atual += 1
                         self.clientes_atendidos_rodada = []
                         self.tempo_inicio_rodada = self.tempo
                         self.area_clientes_tempo = 0
@@ -232,7 +224,7 @@ def ICDaMedia(mean_list):
     #percentil da T-student para mais de 120 amostras
     percentil = 1.645
 
-    aprovado=""
+    aprovado = ""
 
     #qtd de amostras
     n = len(mean_list)
@@ -241,7 +233,7 @@ def ICDaMedia(mean_list):
     mean = np.sum(mean_list)/n
 
     #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
-    s = math.sqrt(np.sum( [(float(element) - float(mean))**2 for element in mean_list] ) / (n-1.0))
+    s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in mean_list])/(n-1.0))
 
     #calculo do Intervalo de Confiança pela T-student
     lower = mean - (percentil*(s/math.sqrt(n)))
@@ -249,13 +241,13 @@ def ICDaMedia(mean_list):
 
     center = lower + (upper - lower)/2.0
 
-    if center/10.0 < (upper - lower):
+    if (center/10.0 < (upper - lower)):
         #print center/10.0
         #print upper - lower
         aprovado = False
         #print "teste IC da media não obteve precisao de 5%, intervalo maior do que 10% do valor central"
     else:
-        aprovado=True
+        aprovado = True
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
     return (lower, upper, center, aprovado)
@@ -267,7 +259,7 @@ def ICDaVariacia(mean_list):
     #qtd de amostras
     n = len(mean_list)
 
-    aprovado=""
+    aprovado = ""
 
     #média amostral
     mean = np.sum(mean_list)/n
@@ -283,7 +275,7 @@ def ICDaVariacia(mean_list):
     Q1menosalpha2 = chi2.isf(q=0.975, df=n-1)
 
     #variancia amostral = SUM((Media - Media Amostral)^2) = S^2
-    s_quadrado=np.sum( [(float(element) - float(mean))**2 for element in mean_list] ) / (n-1.0)
+    s_quadrado = np.sum([(float(element) - float(mean))**2 for element in mean_list])/(n-1.0)
 
     #calculo do Intervalo de Confiança pela qui-quadrado
     lower = (n-1)*s_quadrado/Q1menosalpha2
@@ -294,26 +286,29 @@ def ICDaVariacia(mean_list):
     if center/10.0 < (upper - lower):
         #print center/10.0
         #print upper - lower
-        aprovado=False
+        aprovado = False
         #print "teste IC da variancia não obteve precisao de 5%, intervalo maior do que 10% do valor central"
     else:
-        aprovado=True
+        aprovado = True
 
     #retorna o limite inferior, limite superior, o valor central e a precisão, nessa ordem.
     return (lower, upper, center, aprovado)
 
 
-
 #a matriz de entrada desta funcao deve ter em cada linha tuplas com a (quantidade de pessoas) ou (tempo medio no sistema) pelo periodo de cada evento
 #e cada linha deve ser representativa da execucao de todo o sistema do ro respectivamente 0.2, 0.4, 0.6, 0.8 e 0.9
-def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
-
-    for ro_metrics in matriz_de_metricas_por_ro:
-        plt.plot(*zip(*ro_metrics))
-
-    plt.legend(['ro = 0.2', 'ro = 0.4', 'ro = 0.6', 'ro = 0.8', 'ro = 0.9'], loc='upper left')
-
-plt.show()
+#def printa_grafico_numero_medio_por_tempo(matriz_de_metricas_por_ro):
+def plotGrafico(y, x):
+    #for ro_metrics in matriz_de_metricas_por_ro:
+    #    plt.plot(*zip(*ro_metrics))
+    #plt.legend(['ro = 0.2', 'ro = 0.4', 'ro = 0.6', 'ro = 0.8', 'ro = 0.9'], loc='upper left')
+    fig, ax = plt.subplots()
+    x_temp = range(len(y))
+    ax.plot(y, x_temp)
+    ax.set(xlabel='rodada', ylabel='qtt de pessoas na fila', title='Simulador M/M/1')
+    ax.grid()
+    fig.savefig('plot.png')
+    plt.show()
 
 ############# CALCULADORA ###############
 
@@ -333,7 +328,6 @@ if __name__ == '__main__':
         print(f'Executando com disciplina FCFS')
         for lamb in valores_rho:
             for k in kmins:
-            #for lamb in vetor_lamb:
                 #self, tx_chegada: float, tx_servico: float, k: int, n: int, disciplina: int, IC: float, precisao: float, utilizacao: float):
                 s = Simulador(lamb, mu, k, n_rodadas, disciplina)
                 s.iniciaProcesso()
@@ -352,12 +346,12 @@ if __name__ == '__main__':
 
                 if (aprovadoMW and aprovadoVW and aprovadoMNq and aprovadoVNq):
 
-                    print(f'RESULTADOS DA SIMULACAO COM LAMB = {str(lamb)}, K = {str(k)}')
-                    #print(f'media amostral = "+ str(np.mean(wbarra))
+                    print(f'Resultados da simulação com lambda = {str(lamb)} e k = {str(k)}')
+                    #print(f'media amostral = {str(np.mean(wbarra)}')
                     print(f'')
                     #item a
                     print(f'Tempo médio de espera em fila = {str(centerMW)}')
-                    print(f'intervalo de confiança da espera em fila = {str(lowerMW)} ate {str(upperMW)}')
+                    print(f'intervalo de confiança da espera em fila = {str(lowerMW)} até {str(upperMW)}')
                     print(f'tamanho do intervalo de confiança do tempo médio = {str(upperMW-lowerMW)}')
                     print(f'')
 
@@ -378,20 +372,13 @@ if __name__ == '__main__':
                     print(f'')
 
                     #fim da simulacao
-                    print(f'Fim da simulação com lamb = {str(lamb)}, k = {str(k)}, tipo de fila = {disciplina}')
+                    print(f'Fim da simulação com lamb = {str(lamb)}, k = {str(k)}, disciplina = {disciplina}')
                     print(f'-------------------------------------')
 
+                    #plotGrafico(s.qtd_total_pessoas_fila, s.todos_clientes_atendidos)
 
-
-                    #area de teste para prints de graficos para o Trabalho
-                    #essa parte do codigo ficara comentada para nao gerar centenas de graficos especificos em todas as execucoes
-
-
-                    #plt.plot(tempos[0:k])
-                    #plt.show()
-
-                    #plt.plot(pessoas_na_fila)
-                    #plt.show()
+                    #print(f'qtd total: {len(s.qtd_total_pessoas_fila)} - todos clientes: {len(s.todos_clientes_atendidos)}')
+                    #print(f'clientes: {s.qtd_total_pessoas_fila[:10]} - clientesobjeto: {s.todos_clientes_atendidos[:10]}')
 
                 else:
                     #significa que a quantidade minima de eventos por rodada nao foi o suficiente para gerar os resultados esperados
@@ -400,4 +387,3 @@ if __name__ == '__main__':
                     print(f'CONFIANÇA EXIGIDA NÃO FOI ATENDIDA, PULANDO PARA A PROXIMA ITERACAO COM K INCREMENTADO DE 100')
                     kmins.append(k+100)
                     print(f'NOVO VALOR DE K = {str(k+100)}')
-                    
