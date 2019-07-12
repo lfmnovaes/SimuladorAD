@@ -155,8 +155,8 @@ if __name__ == '__main__':
             tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
             pessoas_na_fila = s.qtt_pessoas_fila_por_rodada
 
-            lowerMW, upperMW, centerMW, aprovadoMW = c.ICDaMedia(E_W)
-            lowerMNq, upperMNq, centerMNq, aprovadoMNq = c.ICDaMedia(E_Nq)
+            lowerMW, upperMW, centerMW, aprovadoMW = c.ICMedia(E_W)
+            lowerMNq, upperMNq, centerMNq, aprovadoMNq = c.ICMedia(E_Nq)
             lowerVW, upperVW, centerVW, aprovadoVW = c.ICDaVariancia(E_W)
             lowerVNq, upperVNq, centerVNq, aprovadoVNq = c.ICDaVariancia(E_Nq)
 
