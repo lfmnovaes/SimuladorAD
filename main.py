@@ -70,15 +70,13 @@ class Simulador(object):
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
     def testeFaseTransiente(self):
-        tStudent = 1.645 #tStudent para mais de 120 amostras
+        tStudent = 1.645 #T-student para mais de 120 amostras
         n = len(self.clientes_atendidos_rodada) #qtt de amostras
-        #média amostral
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        mean = np.sum(tempos_de_fila)/n
+        mean = np.sum(tempos_de_fila)/n #média amostral
         #variância amostral = SUM((Media - Media Amostral)^2) = S^2
         s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
-        #calculo do I.C. pela T-student
-        lower = mean - (tStudent*(s/math.sqrt(n)))
+        lower = mean - (tStudent*(s/math.sqrt(n))) #cálculo do I.C. pela T-student
         upper = mean + (tStudent*(s/math.sqrt(n)))
         center = lower + (upper - lower)/2
         if center/10 < (upper - lower):
@@ -90,75 +88,34 @@ class Simulador(object):
         self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
 
     def iniciaProcesso(self):
-        #cria o primeiro evento de chegada para dar inicio ao simulador
-        self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual)))
-
+        self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
-            #print self.lista_de_eventos
-            #funcao pop(0) retira o primeiro elemento da lista, que e o proximo evento que ira acontecer em ordem cronologica
-            evento_atual = self.lista_de_eventos.pop(0)
-
-            #print evento_atual.tipo_de_evento
-
-            #verifica quantidade de pessoas que exitiam na fila antes de tratar o proximo evento
+            evento_atual = self.lista_de_eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
             self.clientes_na_fila_evento_anterior = len(self.fila_de_clientes)
+            if evento_atual.tipo_de_evento == "evento_chegada": #testa para ver o tipo de evento que está sendo tratado
+                self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
+                evento_atual.cliente.tempo_chegada = self.tempo #cliente recebe seu tempo de chegada de acordo com o tempo que ocasionou a sua criação
+                self.fila_de_clientes.append(evento_atual.cliente) #adiciona o cliente a fila da MM1
+                self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria uma nova chegada de cliente na lista de eventos
+            elif evento_atual.tipo_de_evento == "evento_saida": #se o evento nao é de entrada, entao ele é de saída
+                self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
+                evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
+                self.servidor_ocupado = False #servidor deixa de estar ocupado
+                self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
+                self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
 
-            #testa para ver o tipo de evento que esta sendo tratado
-            if evento_atual.tipo_de_evento == "evento_chegada":
-                #atualiza o tempo global para o tempo em que o evento esta acontecendo
-                self.tempo = evento_atual.tempo_evento
-
-                #a classe cliente recebe seu tempo de chegada de acordo com o tempo do Evento que ocasionou a criacao desse cliente
-                evento_atual.cliente.tempo_chegada = self.tempo
-
-                #adiciona o cliente a fila da MM1
-                self.fila_de_clientes.append(evento_atual.cliente)
-
-                #cria uma nova chegada de cliente na lista de eventos
-                self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual)))
-
-            #se o evento nao e de entrada, entao ele e de saida
-            elif evento_atual.tipo_de_evento == "evento_saida":
-                #atualiza o tempo global para o tempo em que o evento esta acontecendo
-                self.tempo = evento_atual.tempo_evento
-
-                #a classe cliente recebe seu tempo de saida de acordo com o tempo do Evento que ocasionou a saida desse cliente
-                evento_atual.cliente.tempo_termino_servico = self.tempo
-
-                # servidor deixa de estar ocupado
-                self.servidor_ocupado = False
-
-                # adicionando a lista de todos os clientes atendidos para metricas globais
-                self.todos_clientes_atendidos.append(evento_atual.cliente)
-
-                # adicionando a lista de clientes atendidos nesta rodada para metricas locais
-                self.clientes_atendidos_rodada.append(evento_atual.cliente)
-
-            #depois que um dos 2 eventos ocorreu, eu irei calcular a area de clientes que esses eventos provocaram
-
-            #faz calculo da area de pessoas por tempo para ser utilizado para calcular E_Nq_por_rodada
-            self.somaArea()
-
-            #atualiza o valor do tempo do evento que acabou de acontecer, o proximo evento anterior
-            self.tempo_evento_anterior = self.tempo
-
+            self.somaArea() #cálculo da area de pessoas por tempo para ser utilizado para calcular E_Nq_por_rodada
+            self.tempo_evento_anterior = self.tempo #atualiza o valor do tempo do evento que acabou de acontecer
             self.qtt_pessoas_fila_por_rodada.append(len(self.fila_de_clientes)) #armazena qtt de pessoas atual num vetor
 
-            #Se após os eventos ocorrerem, existir alguem na fila e o servidor estiver acabado de ser liberado
-            #Entao o programa vai servir o proximo cliente que esta em espera, com relacao a politica de atendimento
-            if len(self.fila_de_clientes) != 0 and not self.servidor_ocupado:
-                #Se FCFS, eu irei tirar da fila de clientes o cliente que entrou a mais tempo, o cliente da esquerda
-                if (self.disciplina == "fcfs"):
+            #Se o servidor estiver liberado e ainda existir alguém na fila
+            if (not self.servidor_ocupado and len(self.fila_de_clientes) != 0): #então o servidor serve o próximo cliente
+                if (self.disciplina == "fcfs"): #Na FCFS, clientes serão removidos pela esquerda, que entrou a mais tempo
                     cliente = self.fila_de_clientes.pop(0)
-                #Se LCFS, eu irei tirar da fila de clientes o cliente que entrou a menos tempo, o cliente da direita
-                elif (self.disciplina == "lcfs"):
+                elif (self.disciplina == "lcfs"): #Na LCFS, clientes serão removidos pela direita, que entrou a menos tempo
                     cliente = self.fila_de_clientes.pop()
-
-                #atualiza o tempo em que o cliente entrou em servico
-                cliente.tempo_comeco_servico = self.tempo
-
-                #gera o evento de saida que essa entrada em servico ira ocasionar
-                self.inserirEventoEmOrdem(self.geraEventoSaida(cliente))
+                cliente.tempo_comeco_servico = self.tempo #atualiza o tempo em que o cliente entrou em serviço
+                self.inserirEventoEmOrdem(self.geraEventoSaida(cliente)) #gera o evento de saída que essa entrada em serviço irá ocasionar
                 self.servidor_ocupado = True
 
             if len(self.clientes_atendidos_rodada) >= self.min_k:
