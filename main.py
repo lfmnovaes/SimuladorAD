@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 args = parser.parse_args()
 
-if (args.disciplina.lower() == "lcfs"):
+if args.disciplina.lower() == "lcfs":
     print(f'Executando com disciplina LCFS')
     disciplina = 'lcfs'
 else:
@@ -157,8 +157,8 @@ if __name__ == '__main__':
 
             infMW, supMW, centerMW, okMW = c.ICMedia(E_W)
             infMNq, supMNq, centroMNq, okMNq = c.ICMedia(E_Nq)
-            infVW, supVW, centroVW, okVW = c.ICDaVariancia(E_W)
-            infVNq, supVNq, centroVNq, okVNq = c.ICDaVariancia(E_Nq)
+            infVW, supVW, centroVW, okVW = c.ICVariancia(E_W)
+            infVNq, supVNq, centroVNq, okVNq = c.ICVariancia(E_Nq)
 
             if (okMW and okVW and okMNq and okVNq):
                 print(f'Resultados da simulação com lambda = {str(lamb)}, k = {str(k)} e disciplina = {disciplina}')
@@ -176,15 +176,14 @@ if __name__ == '__main__':
                 print(f'Variância média de Nq = {str(centroVW)}')
                 print(f'I.C. da variância de Nq = {str(infVW)} ate {str(supVW)}')
                 print(f'')
-                print(f'------ Tempo de Simulação: {(datetime.now() - inicioSim)} ------')
 
-                #c.plotGrafico(x, y, x_legenda, y_legenda)
                 c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
 
                 #print(f'tempos: {len(tempos)} - e_nq: {len(E_Nq)} - e_w: {len(E_W)}')
                 #print(f'tempos: {tempos[:10]} - e_nq: {E_Nq[:10]} - e_w: {E_W[:10]}')
             else:
-                print(f'confiança não foi obtida, incrementando k em 100 na próxima iteração')
+                print(f'confiança não foi obtida, incrementando k em 100 para a próxima iteração')
                 kmins.append(k+100)
                 print(f'novo valor de k = {str(k+100)}')
+    print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
