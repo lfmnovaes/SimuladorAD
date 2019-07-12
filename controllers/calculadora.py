@@ -14,7 +14,6 @@ class Calculadora(object):
 
         # Variância das amostras: SOMA((Media - Media das amostras)^2) = S^2
         s = math.sqrt(np.sum([(float(element) - float(media))**2 for element in lista_de_medias])/(n-1.0))
-
         inf = media - (tStudent*(s/math.sqrt(n))) # IC(inferior) pela T-student
         sup = media + (tStudent*(s/math.sqrt(n))) # IC(superior) pela T-student
         centro = inf + (inf - sup)/2.0 # Centro dos intervalos
@@ -33,21 +32,20 @@ class Calculadora(object):
         n = len(lista_de_medias) # Quantidade de amostras
         media = np.sum(lista_de_medias)/n # Média das amostras
 
-        # Usando função auxiliar (chi2.isf) para calcular o valor para n = 3200
-        Qui_alpha2 = chi2.isf(q=0.025, df=n-1)
-        Qui1_menosalpha2 = chi2.isf(q=0.975, df=n-1)
+        # Usando função auxiliar (chi2.isf) para calcular o valor de qui-quadrado para n = 3200
+        qui2Alpha = chi2.isf(q=0.025, df=n-1)
+        qui2MenosAlpha = chi2.isf(q=0.975, df=n-1)
 
         # Variância das amostras: SOMA((Media - Media das Amostras)^2) = S^2
         s_quadrado = np.sum([(float(element) - float(media))**2 for element in lista_de_medias])/(n-1.0)
 
         # Calculo do IC para qui-quadrado
-        inf = (n-1)*s_quadrado/Qui1_menosalpha2
-        sup = (n-1)*s_quadrado/Qui_alpha2
+        inf = (n-1)*s_quadrado/qui2MenosAlpha
+        sup = (n-1)*s_quadrado/qui2Alpha
         centro = inf + (sup - inf)/2.0
 
-        # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
-        if centro/10.0 < (sup - inf):
-            self.ok = False
+        if centro/10.0 < (sup - inf): # Se for maior do que 10% do valor central(precisão de 5%)
+            self.ok = False #então não atingiu a precisão adequada
         else:
             self.ok = True
 
