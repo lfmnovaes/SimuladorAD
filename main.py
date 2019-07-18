@@ -68,15 +68,18 @@ class Simulador(object):
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
     def testeFaseTransiente(self):
-        # T-student para mais de 120 amostras
-        #tStudent = 1.645
+        # T-student para mais de +120 amostras - para simples teste
+        # tStudent = 1.645
         n = len(self.clientes_atendidos_rodada) #qtd de amostras
-        tStudent = c.tstudent(0.05, n)
+        tStudent = c.tstudent(0.95, n-1)
+        print("Valor de %f: , t-student: %f" % (n, tStudent))
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        mean = np.sum(tempos_de_fila)/n #média amostral
-        #variância amostral = SUM((Media - Media Amostral)^2) = S^2
+        # Média amostral
+        mean = np.sum(tempos_de_fila)/n
+        # Variância amostral = SUM((Media - Media Amostral)^2) = S^2
         s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
-        inferior = mean - (tStudent*(s/math.sqrt(n))) #cálculo do I.C. pela T-student
+        # cálculo do I.C. pela T-student
+        inferior = mean - (tStudent*(s/math.sqrt(n)))
         superior = mean + (tStudent*(s/math.sqrt(n)))
         centro = inferior + (superior - inferior)/2
         if centro/10 < (superior - inferior):

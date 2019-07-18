@@ -54,7 +54,7 @@ class Calculadora(object):
         return (inf, sup, centro, self.ok)
 
     def tstudent(self, alpha, gl):
-        return scipy.stats.t.ppf(1 - (alpha/2), gl)
+        return scipy.stats.t.ppf(alpha, df=gl)
 
     def plotGrafico(self, x, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
         fig, ax = plt.subplots()
