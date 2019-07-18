@@ -68,8 +68,10 @@ class Simulador(object):
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
     def testeFaseTransiente(self):
-        tStudent = 1.645 #T-student para mais de 120 amostras
+        # T-student para mais de 120 amostras
+        #tStudent = 1.645
         n = len(self.clientes_atendidos_rodada) #qtd de amostras
+        tStudent = c.tstudent(0.05, n)
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         mean = np.sum(tempos_de_fila)/n #média amostral
         #variância amostral = SUM((Media - Media Amostral)^2) = S^2

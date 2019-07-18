@@ -1,5 +1,6 @@
 import math
 from scipy.stats import chi2
+import scipy.stats
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -51,6 +52,9 @@ class Calculadora(object):
 
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (inf, sup, centro, self.ok)
+
+    def tstudent(self, alpha, gl):
+        return scipy.stats.t.ppf(1 - (alpha/2), gl)
 
     def plotGrafico(self, x, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
         fig, ax = plt.subplots()
