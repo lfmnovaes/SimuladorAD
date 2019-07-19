@@ -124,7 +124,7 @@ class Simulador(object):
             if len(self.clientes_atendidos_rodada) >= self.k_atual:
                 if self.transiente:
                     self.testeFaseTransiente()
-                    #começa a fase transiente até convergir, com limite de 10 * o tamanho da rodada
+                    #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
                     if not self.transiente or len(self.clientes_atendidos_rodada) > (10*self.k_atual):
                         self.rodada_atual += 1
                         self.clientes_atendidos_rodada = []
