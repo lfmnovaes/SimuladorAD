@@ -17,10 +17,10 @@ class Calculadora(object):
         s = math.sqrt(np.sum([(float(element) - float(media))**2 for element in lista_de_medias])/(n-1.0))
         inf = media - (tStudent*(s/math.sqrt(n))) # IC(inferior) pela T-student
         sup = media + (tStudent*(s/math.sqrt(n))) # IC(superior) pela T-student
-        centro = inf + (inf - sup)/2.0 # Centro dos intervalos
+        centro = inf + (sup - inf)/2.0 # Centro dos intervalos
 
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
-        if (centro/10.0 < (inf - sup)):
+        if (centro/10.0 < (sup - inf)):
             self.ok = False
         else:
             self.ok = True
@@ -59,6 +59,8 @@ class Calculadora(object):
     def plotGrafico(self, x, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
         fig, ax = plt.subplots()
         ax.plot(range(x), y)
+        #ax.plot(x,y)
         ax.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
+        #ax.set_ylim(0, 1)
         ax.grid()
         fig.savefig(saida + '.png')
