@@ -141,7 +141,7 @@ class Simulador(object):
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.2]
+    valores_rho = [0.6]
     mu = 1
     k_min = [150]
     n_rodadas = 3200
