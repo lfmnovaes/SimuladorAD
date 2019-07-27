@@ -72,7 +72,7 @@ class Simulador(object):
         # tStudent = 1.645
         n = len(self.clientes_atendidos_rodada) #qtd de amostras
         tStudent = c.tstudent(0.95, n-1)
-        print("Valor de %f: , t-student: %f" % (n, tStudent))
+        #print("Valor de %f: , t-student: %f" % (n, tStudent))
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # Média amostral
         mean = np.sum(tempos_de_fila)/n
@@ -132,7 +132,7 @@ class Simulador(object):
                         self.area_clientes_tempo = 0
                 else:
                     self.calculaNq()
-                    #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada}))}')
+                    #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
                     self.adicionaE_WDaRodada()
                     self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
                     self.area_clientes_tempo = 0
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.9]
     mu = 1
-    k_min = [150]
+    k_min = [1000]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
@@ -158,6 +158,10 @@ if __name__ == '__main__':
             E_W = s.E_W_por_rodada
             tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
             pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
+            """print(f'Tamanho E_Nq = {len(E_Nq)}')
+            print(f'Tamanho E_W = {len(E_W)}')
+            print(f'Tamanho tempos = {len(tempos)}')
+            print(f'Tamanho pessoas_na_fila = {len(pessoas_na_fila)}')"""
             infM_W, supM_W, centroMW, okMW = c.ICMedia(E_W)
             infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(E_Nq)
             infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
@@ -176,8 +180,10 @@ if __name__ == '__main__':
                 print(f'I.C. da variância de Nq = {min(infV_Nq, supV_Nq)} até {max(infV_Nq, supV_Nq)}')
                 print(f'')
 
-                c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-                c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
+                #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
+                #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
+                #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
+                #c.myPlot(n_rodadas, pessoas_na_fila)
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)

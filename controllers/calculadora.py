@@ -59,6 +59,8 @@ class Calculadora(object):
     def plotGrafico(self, x, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
         fig, ax = plt.subplots()
         ax.plot(range(x), y)
+        #ax.plot(x,y)
         ax.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
+        #ax.set_ylim(0, 1)
         ax.grid()
         fig.savefig(saida + '.png')
