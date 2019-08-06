@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import random
 from datetime import datetime
@@ -164,8 +162,10 @@ if __name__ == '__main__':
             print(f'Tamanho pessoas_na_fila = {len(pessoas_na_fila)}')"""
             infM_W, supM_W, centroMW, okMW = c.ICMedia(E_W)
             infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(E_Nq)
-            infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
-            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(E_Nq)
+            #infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
+            #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(E_Nq)
+            infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
+            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
 
             if (okMW and okVW and okMNq and okVNq):
                 print(f'Resultados com lambda = {lamb}, k = {k}')

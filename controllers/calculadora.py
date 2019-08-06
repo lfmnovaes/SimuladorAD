@@ -52,6 +52,42 @@ class Calculadora(object):
 
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (inf, sup, centro, self.ok)
+    
+    def ICVarianciaIncremental(self, lista_de_medias):
+        # Qui-quadrado para medir a variância
+        n = len(lista_de_medias)  # Quantidade de amostras
+
+        # Usando função auxiliar (chi2.isf) para calcular o valor de qui-quadrado para n = 3200
+        qui2Alpha = chi2.isf(q=0.025, df=n - 1)
+        qui2MenosAlpha = chi2.isf(q=0.975, df=n - 1)
+
+        # Variância das amostras: SOMA((Media - Media das Amostras)^2) = S^2
+        # s_quadrado = np.sum([(float(element) - float(media)) ** 2 for element in lista_de_medias]) / (n - 1.0)
+
+        s_quadrado_1termo = 0.0
+        for element in lista_de_medias:
+            s_quadrado_1termo = s_quadrado_1termo + float(element) ** 2
+        s_quadrado_1termo = s_quadrado_1termo / (n - 1.0)
+
+        s_quadrado_2termo = 0.0
+        for element in lista_de_medias:
+            s_quadrado_2termo = s_quadrado_2termo + float(element)
+        s_quadrado_2termo = (s_quadrado_2termo ** 2) / (n * (n - 1.0))
+
+        s_quadrado = s_quadrado_1termo - s_quadrado_2termo
+
+        # Calculo do IC para qui-quadrado
+        inf = (n - 1) * s_quadrado / qui2MenosAlpha
+        sup = (n - 1) * s_quadrado / qui2Alpha
+        centro = inf + (sup - inf) / 2.0
+
+        if centro / 10.0 < (sup - inf):  # Se for maior do que 10% do valor central(precisão de 5%)
+            self.ok = False  # então não atingiu a precisão adequada
+        else:
+            self.ok = True
+
+        # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
+        return (inf, sup, centro, self.ok)
 
     def tstudent(self, alpha, gl):
         return scipy.stats.t.ppf(alpha, df=gl)
