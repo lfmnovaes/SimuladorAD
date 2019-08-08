@@ -1,13 +1,16 @@
+#!/usr/bin/env python3
+
 import argparse
 import random
 from datetime import datetime
-
 from controllers.calculadora import *
+from controllers.calculadora2 import *
 from models.evento import *
 from models.cliente import *
 
 parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
+parser.add_argument('k', help='k inicial do problema')
 args = parser.parse_args()
 
 if args.disciplina.lower() == "lcfs":
@@ -56,6 +59,7 @@ class Simulador(object):
     def inserirEventoEmOrdem(self, evento): #insere e ordena
         self.eventos.append(evento)
         self.eventos = sorted(self.eventos, key=lambda evento: evento.tempo_evento)
+        #print(f'entrou em inserirEventoEmOrdem')
 
     def geraEventoChegada(self, cliente):
         tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_chegada)
@@ -69,7 +73,7 @@ class Simulador(object):
         # T-student para mais de +120 amostras - para simples teste
         # tStudent = 1.645
         n = len(self.clientes_atendidos_rodada) #qtd de amostras
-        tStudent = c.tstudent(0.95, n-1)
+        tStudent = c.tStudent(0.95, n-1)
         #print("Valor de %f: , t-student: %f" % (n, tStudent))
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # Média amostral
@@ -141,15 +145,21 @@ if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.6]
     mu = 1
-    k_min = [150]
+    #k_min = [1000]
+    infW = centroW = supW = []
+    infNq = centroNq = supNq = []
+    kmax = int(args.k)
     n_rodadas = 3200
     inicioSim = datetime.now()
-    print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
-        for k in k_min:
+        print(f'Simulação com disciplina: {disciplina.upper()} .:. k máximo: {kmax} .:. lambda: {lamb}')
+        k = 1
+        while(k <= kmax):
             s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
+            cW = Calculadora2()
+            cNq = Calculadora2()
             s.iniciaProcesso()
 
             E_Nq = s.E_Nq_por_rodada
@@ -160,6 +170,10 @@ if __name__ == '__main__':
             print(f'Tamanho E_W = {len(E_W)}')
             print(f'Tamanho tempos = {len(tempos)}')
             print(f'Tamanho pessoas_na_fila = {len(pessoas_na_fila)}')"""
+
+            cW.adicionaValor(s.E_W_por_rodada[k])
+            cNq.adicionaValor(s.E_Nq_por_rodada[k])
+
             infM_W, supM_W, centroMW, okMW = c.ICMedia(E_W)
             infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(E_Nq)
             #infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
@@ -167,8 +181,16 @@ if __name__ == '__main__':
             infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
             infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
 
+            #Coletando dados para a geração de gráficos
+            infW.append(infM_W)
+            infNq.append(infM_Nq)
+            centroW.append(centroMW)
+            centroNq.append(centroNq)
+            supW.append(supM_W)
+            supNq.append(supM_Nq)
+
             if (okMW and okVW and okMNq and okVNq):
-                print(f'Resultados com lambda = {lamb}, k = {k}')
+                print(f'Resultados com kmin = {k}')
                 print(f'Tempo médio de espera na fila = {centroMW}')
                 print(f'I.C. de espera na fila = {infM_W} até {supM_W}')
                 print(f'Tamanho do I.C. do tempo médio na fila = {supM_W-infM_W}')
@@ -179,13 +201,16 @@ if __name__ == '__main__':
                 print(f'Variância média de Nq = {centroVNq}')
                 print(f'I.C. da variância de Nq = {min(infV_Nq, supV_Nq)} até {max(infV_Nq, supV_Nq)}')
                 print(f'')
-
-                #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-                #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-                #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
-                #c.myPlot(n_rodadas, pessoas_na_fila)
+                print(f'Calculadora2 E[W]: {cW.getMuChapeu()} .:. {cW.getSigmaChapeu()}')
+                print(f'Calculadora2 E[Nq]: {cNq.getMuChapeu()} .:. {cNq.getSigmaChapeu()}')
+                print(f'')
+                k += 1
             else:
-                print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
-                k_min.append(k+100)
-                print(f'Novo valor de k = {k_min}')
+                print(f'K não satisfatório, incrementando-o em 5 para a próxima iteração')
+                k += 5
+                print(f'Novo valor de k = {k}')
+    #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
+    c.plotGrafico(infW, disciplina, "k rodadas", "infW", disciplina + "1_" + str(lamb))
+    #c.plotGrafico(infNq, disciplina, "k rodadas", "infNq", disciplina + "2_" + str(lamb))
+    #c.myPlot(n_rodadas, pessoas_na_fila)
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')

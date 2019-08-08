@@ -89,13 +89,13 @@ class Calculadora(object):
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (inf, sup, centro, self.ok)
 
-    def tstudent(self, alpha, gl):
+    def tStudent(self, alpha, gl):
         return scipy.stats.t.ppf(alpha, df=gl)
 
-    def plotGrafico(self, x, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
+    def plotGrafico(self, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
         fig, ax = plt.subplots()
-        ax.plot(range(x), y)
-        #ax.plot(x,y)
+        #ax.plot(range(x), y)
+        ax.plot(range(0, len(y)), y)
         ax.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
         #ax.set_ylim(0, 1)
         ax.grid()
