@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 import argparse
 import random
 from datetime import datetime
 
 from controllers.calculadora import *
+from controllers.estatisticasAmostrais import *
 from models.evento import *
 from models.cliente import *
 
@@ -35,6 +37,11 @@ class Simulador(object):
         self.E_W_por_rodada = [] #tempo médio gasto na fila de espera por rodada
         self.E_Nq_por_rodada = [] #tamanho médio da fila de espera por rodada
         self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
+        
+        self.e_E_W = EstatisticasAmostrais()
+        self.e_E_Nq = EstatisticasAmostrais()
+        self.e_V_W = EstatisticasAmostrais()
+        self.e_V_Nq = EstatisticasAmostrais()
 
         self.clientes_na_fila_evento_anterior = 0
         self.tempo_evento_anterior = 0.0
@@ -51,7 +58,9 @@ class Simulador(object):
 
     def calculaNq(self): #função para calcular a quantidade média de pessoas na fila da mm1
         tempo_da_rodada = self.tempo - self.tempo_inicio_rodada
-        self.E_Nq_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
+        #self.E_Nq_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
+        # chama funcao para adicionar valor para estatisticas
+        self.e_E_Nq.adicionaValor(self.area_clientes_tempo/tempo_da_rodada)
 
     def inserirEventoEmOrdem(self, evento): #insere e ordena
         self.eventos.append(evento)
@@ -85,8 +94,12 @@ class Simulador(object):
 
     def adicionaE_WDaRodada(self):
         n = float(len(self.clientes_atendidos_rodada))
+        # mudar para somar incrementalmente e dividir por len(clientes_atendidos)
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
+        # chama funcao para adicionar valor para estatisticas 
+        #self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
+        self.e_E_W.adicionaValor(np.sum(tempos_de_fila)/n)
+        
 
     def iniciaProcesso(self):
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
@@ -150,6 +163,7 @@ if __name__ == '__main__':
         for k in k_min:
             s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
+
             s.iniciaProcesso()
 
             E_Nq = s.E_Nq_por_rodada
