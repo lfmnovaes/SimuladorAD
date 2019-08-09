@@ -9,7 +9,10 @@ class EstatisticasAmostrais(object):
             self.soma += x - self.k
             self.somaQuad += (x - self.k)*(x - self.k)
     def get_muChapeu(self):
-            return self.k + self.soma / self.n
+        return self.k + self.soma / self.n
 
     def get_sigmaChapeu(self):
-            return (self.somaQuad - (self.soma*self.soma)/self.n)/(self.n - 1)
+        if (self.n >= 1):    
+                return (self.somaQuad - (self.soma*self.soma)/self.n)/(self.n - 1)
+        else:
+                return 0

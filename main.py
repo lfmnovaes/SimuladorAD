@@ -38,6 +38,9 @@ class Simulador(object):
         self.E_Nq_por_rodada = [] #tamanho médio da fila de espera por rodada
         self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
         
+        self.sementesUsadas = [] #armazena sequencia de sementes usadas
+        self.distanciaSementes = 0.0001 # Define distancia para sementes usadas.
+        
         self.e_E_W = EstatisticasAmostrais()
         self.e_E_Nq = EstatisticasAmostrais()
         self.e_V_W = EstatisticasAmostrais()
@@ -48,11 +51,25 @@ class Simulador(object):
         self.tempo_inicio_rodada = 0.0
         self.area_clientes_tempo = 0 #cálculo incremental da área a cada chegada na fila e a cada entrada em serviço
 
+    def defineSemente(self, semente):
+        random.seed(semente)
+
+    def escolheSemente(self, sementesUsadas, distancia):
+        newNumber = 0
+        while newNumber == 0:
+            newNumber = random.random()
+            for number in sementesUsadas:
+                if abs(newNumber - number) < distancia:
+                    newNumber = 0
+        return newNumber
+        
+    
     def simulaTempoExponencial(self, taxa):
         r = random.random()
         tempo = (-1.0 * math.log(r)) / (taxa + 0.0)
         return tempo
 
+    
     def somaArea(self): #função para o cálculo de pessoas na fila
         self.area_clientes_tempo += (self.tempo - self.tempo_evento_anterior) * self.clientes_na_fila_evento_anterior
 
@@ -102,6 +119,12 @@ class Simulador(object):
         
 
     def iniciaProcesso(self):
+        '''
+        r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
+        self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
+        self.defineSemente(r)
+        '''
+
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
             evento_atual = self.eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
@@ -149,12 +172,18 @@ class Simulador(object):
                     self.area_clientes_tempo = 0
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
+                    '''
+                    r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
+                    print(f'valor de rodada: {self.rodada_atual}')
+                    self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
+                    self.defineSemente(r)
+                    '''
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.6]
     mu = 1
-    k_min = [150]
+    k_min = [1500]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
@@ -171,12 +200,12 @@ if __name__ == '__main__':
             tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
             pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
 
-            infM_W, supM_W, centroMW, okMW = c.ICMedia(E_W)
-            infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(E_Nq)
-            #infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
-            #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(E_Nq)
-            infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
-            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
+            infM_W, supM_W, centroMW, okMW = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
+            infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
+            infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
+            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(E_Nq)
+            #infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
+            #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
 
             if (okMW and okVW and okMNq and okVNq):
                 print(f'Resultados com lambda = {lamb}, k = {k}')
