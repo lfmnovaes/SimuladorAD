@@ -170,10 +170,7 @@ if __name__ == '__main__':
             E_W = s.E_W_por_rodada
             tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
             pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
-            """print(f'Tamanho E_Nq = {len(E_Nq)}')
-            print(f'Tamanho E_W = {len(E_W)}')
-            print(f'Tamanho tempos = {len(tempos)}')
-            print(f'Tamanho pessoas_na_fila = {len(pessoas_na_fila)}')"""
+
             infM_W, supM_W, centroMW, okMW = c.ICMedia(E_W)
             infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(E_Nq)
             #infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
