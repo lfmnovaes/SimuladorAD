@@ -51,6 +51,8 @@ class Simulador(object):
         self.tempo_inicio_rodada = 0.0
         self.area_clientes_tempo = 0 #cálculo incremental da área a cada chegada na fila e a cada entrada em serviço
 
+        self.somaW = 0.0
+
     def defineSemente(self, semente):
         random.seed(semente)
 
@@ -112,10 +114,10 @@ class Simulador(object):
     def adicionaE_WDaRodada(self):
         n = float(len(self.clientes_atendidos_rodada))
         # mudar para somar incrementalmente e dividir por len(clientes_atendidos)
-        tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
+        #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # chama funcao para adicionar valor para estatisticas 
         #self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
-        self.e_E_W.adicionaValor(np.sum(tempos_de_fila)/n)
+        self.e_E_W.adicionaValor(self.somaW/n)
         
 
     def iniciaProcesso(self):
@@ -137,6 +139,9 @@ class Simulador(object):
             elif evento_atual.tipo_de_evento == "evento_saida": #se o evento nao é de entrada então ele é de saída
                 self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
                 evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
+                # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
+                self.somaW += evento_atual.cliente.tempoEmEspera()
+                
                 self.servidor_ocupado = False #servidor deixa de estar ocupado
                 self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
                 self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
@@ -167,9 +172,11 @@ class Simulador(object):
                 else:
                     self.calculaNq()
                     #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
+                    print(f'rodada: {self.rodada_atual}')
                     self.adicionaE_WDaRodada()
                     self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
                     self.area_clientes_tempo = 0
+                    self.somaW = 0.0
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
                     '''
@@ -183,7 +190,7 @@ if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.6]
     mu = 1
-    k_min = [1900]
+    k_min = [2200]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
@@ -199,6 +206,7 @@ if __name__ == '__main__':
             #E_W = s.E_W_por_rodada
             #tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
             #pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
+            # Lista contendo valores analiticos.
 
             infM_W, supM_W, centroMW, okMW = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
             infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)

@@ -27,6 +27,7 @@ class Calculadora(object):
             self.ok = False
         else:
             self.ok = True
+        print(f'ok tStudent: {self.ok}')
 
         # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
         return (inf, sup, centro, self.ok)
@@ -55,6 +56,8 @@ class Calculadora(object):
             self.ok = False #então não atingiu a precisão adequada
         else:
             self.ok = True
+        
+        print(f'ok chi: {self.ok}')
 
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (inf, sup, centro, self.ok)
