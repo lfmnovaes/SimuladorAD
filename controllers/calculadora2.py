@@ -14,5 +14,8 @@ class Calculadora2(object):
 
     def getSigmaChapeu(self):
         #return ((self.somaQuad - (self.soma*self.soma)/self.n)/(self.n-1))
-        try: return ((self.somaQuad - (self.soma*self.soma)/self.n)/(self.n-1))
-        except ZeroDivisionError: return ((self.somaQuad - (self.soma*self.soma)/self.n+1)/(self.n))
+        if self.n in (0, 1):
+            return 0
+        else:
+            return ((self.somaQuad - (self.soma*self.soma)/self.n)/(self.n-1))
+

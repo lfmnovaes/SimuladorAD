@@ -12,19 +12,21 @@ parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 parser.add_argument('k', help='k inicial do problema')
 args = parser.parse_args()
-kmax = int(args.k)
+k = int(args.k)
 
 if args.disciplina.lower() == "lcfs":
     disciplina = 'lcfs'
 else:
     disciplina = 'fcfs'
 
+EW_p_rodada = []
+
 class Simulador(object):
     def __init__(self, lamb, mu, n_rodadas, disciplina):
         self.transiente = True
         self.tx_chegada = lamb
         self.tx_servico = mu
-        self.k_atual = kmax
+        self.k_atual = k
         self.n_rodadas = n_rodadas
         self.disciplina = disciplina #FCFS ou LCFS
         self.tempo = 0.0
@@ -60,7 +62,10 @@ class Simulador(object):
     def inserirEventoEmOrdem(self, evento): #insere e ordena
         self.eventos.append(evento)
         self.eventos = sorted(self.eventos, key=lambda evento: evento.tempo_evento)
-        #print(f'entrou em inserirEventoEmOrdem')
+
+    def inserirEvento(self, evento): #insere e ordena
+        self.eventos.append(evento)
+        self.eventos = sorted(self.eventos, key=lambda evento: evento.tempo_evento)
 
     def geraEventoChegada(self, cliente):
         tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_chegada)
@@ -94,7 +99,7 @@ class Simulador(object):
         self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
 
     def iniciaProcesso(self):
-        self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
+        self.inserirEvento(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
             evento_atual = self.eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
             self.clientes_na_fila_evento_anterior = len(self.fila_de_clientes)
@@ -102,7 +107,7 @@ class Simulador(object):
                 self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
                 evento_atual.cliente.tempo_chegada = self.tempo #cliente recebe seu tempo de chegada de acordo com o tempo que ocasionou a sua criação
                 self.fila_de_clientes.append(evento_atual.cliente) #adiciona o cliente a fila da MM1
-                self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria uma nova chegada de cliente na lista de eventos
+                self.inserirEvento(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria uma nova chegada de cliente na lista de eventos
             elif evento_atual.tipo_de_evento == "evento_saida": #se o evento nao é de entrada então ele é de saída
                 self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
                 evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
@@ -121,7 +126,7 @@ class Simulador(object):
                 elif (self.disciplina == "lcfs"): #Na LCFS, clientes serão removidos pela direita, que entrou a menos tempo
                     cliente = self.fila_de_clientes.pop()
                 cliente.tempo_comeco_servico = self.tempo #atualiza o tempo em que o cliente entrou em serviço
-                self.inserirEventoEmOrdem(self.geraEventoSaida(cliente)) #gera o evento de saída que essa entrada em serviço irá ocasionar
+                self.inserirEvento(self.geraEventoSaida(cliente)) #gera o evento de saída que essa entrada em serviço irá ocasionar
                 self.servidor_ocupado = True
 
             if len(self.clientes_atendidos_rodada) >= self.k_atual:
@@ -141,12 +146,15 @@ class Simulador(object):
                     self.area_clientes_tempo = 0
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
+        #print(f'{self.todos_clientes_atendidos}')
+        #print(f'{self.clientes_atendidos_rodada}')
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.6]
     mu = 1
-    #k_min = [1000]
+    #k = 150
+    kmin = k #critério de parada
     infW = []
     centroW = []
     supW = []
@@ -157,9 +165,8 @@ if __name__ == '__main__':
     inicioSim = datetime.now()
 
     for lamb in valores_rho:
-        print(f'Simulação com disciplina: {disciplina.upper()} .:. k máximo: {kmax} .:. lambda: {lamb}')
-        k = 1
-        while(k <= kmax):
+        print(f'Simulação com disciplina: {disciplina.upper()} .:. k: {kmin} .:. lambda: {lamb}')
+        while(kmin <= 10000):
             s = Simulador(lamb, mu, n_rodadas, disciplina)
             c = Calculadora()
             cW = Calculadora2()
@@ -194,7 +201,7 @@ if __name__ == '__main__':
             supNq.append(supM_Nq)
 
             if (okMW and okVW and okMNq and okVNq):
-                print(f'Resultados com kmin = {k}')
+                print(f'Achado kmin = {kmin}')
                 print(f'Tempo médio de espera na fila = {centroMW}')
                 print(f'I.C. de espera na fila = {infM_W} até {supM_W}')
                 print(f'Tamanho do I.C. do tempo médio na fila = {supM_W-infM_W}')
@@ -208,13 +215,15 @@ if __name__ == '__main__':
                 print(f'Calculadora2 E[W]: {cW.getMuChapeu()} .:. {cW.getSigmaChapeu()}')
                 print(f'Calculadora2 E[Nq]: {cNq.getMuChapeu()} .:. {cNq.getSigmaChapeu()}')
                 print(f'')
-                k += 1
+                break
             else:
-                print(f'K não satisfatório, incrementando-o em 5 para a próxima iteração')
-                k += 5
-                print(f'Novo valor de k = {k}')
-    #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-    c.plotGrafico(infW, centroW, supW, disciplina, "k rodadas", "infW", disciplina + "1_" + str(lamb))
+                print(f'k não satisfatório, incrementando-o em 100 para a próxima iteração')
+                kmin += 100
+                print(f'Novo valor de kmin = {kmin}')
+    
+    #c.plotGrafico(infW, centroW, supW, disciplina, "k rodadas", "infW", disciplina + "1_" + str(lamb))
+    c.plotGrafico(s.E_W_por_rodada, disciplina, "E[W]", "infW", disciplina + "1_" + str(lamb))
+    #print(f'{s.E_W_por_rodada[:100]}')
     #print(f'{infNq}')
     #print(f'{centroNq}')
     #print(f'{supNq}')
