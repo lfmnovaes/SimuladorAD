@@ -12,7 +12,6 @@ parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 parser.add_argument('k', help='k inicial do problema')
 args = parser.parse_args()
-kmax = int(args.k)
 
 if args.disciplina.lower() == "lcfs":
     disciplina = 'lcfs'
@@ -20,11 +19,11 @@ else:
     disciplina = 'fcfs'
 
 class Simulador(object):
-    def __init__(self, lamb, mu, n_rodadas, disciplina):
+    def __init__(self, lamb, mu, k, n_rodadas, disciplina):
         self.transiente = True
         self.tx_chegada = lamb
         self.tx_servico = mu
-        self.k_atual = kmax
+        self.k_atual = k
         self.n_rodadas = n_rodadas
         self.disciplina = disciplina #FCFS ou LCFS
         self.tempo = 0.0
@@ -147,12 +146,9 @@ if __name__ == '__main__':
     valores_rho = [0.6]
     mu = 1
     #k_min = [1000]
-    infW = []
-    centroW = []
-    supW = []
-    infNq = []
-    centroNq = []
-    supNq = []
+    infW = centroW = supW = []
+    infNq = centroNq = supNq = []
+    kmax = int(args.k)
     n_rodadas = 3200
     inicioSim = datetime.now()
 
@@ -160,7 +156,7 @@ if __name__ == '__main__':
         print(f'Simulação com disciplina: {disciplina.upper()} .:. k máximo: {kmax} .:. lambda: {lamb}')
         k = 1
         while(k <= kmax):
-            s = Simulador(lamb, mu, n_rodadas, disciplina)
+            s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
             cW = Calculadora2()
             cNq = Calculadora2()
@@ -214,10 +210,7 @@ if __name__ == '__main__':
                 k += 5
                 print(f'Novo valor de k = {k}')
     #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-    c.plotGrafico(infW, centroW, supW, disciplina, "k rodadas", "infW", disciplina + "1_" + str(lamb))
-    #print(f'{infNq}')
-    #print(f'{centroNq}')
-    #print(f'{supNq}')
-    #c.plotGrafico(infNq, centroNq, supNq, disciplina, "k rodadas", "infNq", disciplina + "2_" + str(lamb))
+    c.plotGrafico(infW, disciplina, "k rodadas", "infW", disciplina + "1_" + str(lamb))
+    #c.plotGrafico(infNq, disciplina, "k rodadas", "infNq", disciplina + "2_" + str(lamb))
     #c.myPlot(n_rodadas, pessoas_na_fila)
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')

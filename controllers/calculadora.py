@@ -92,19 +92,11 @@ class Calculadora(object):
     def tStudent(self, alpha, gl):
         return scipy.stats.t.ppf(alpha, df=gl)
 
-    def plotGrafico(self, iy, cy, sy, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
-        fig = plt.figure()
-        #ax = fig.add_subplot(111)
-        y = np.arange(len(sy))
-        plt.plot(y, sy, c='y', marker="^", ls='-', label='IC Sup')
-        plt.plot(y, cy, c='k', marker=".", ls='-', label='IC Central')
-        plt.plot(y, iy, c='y', marker="v", ls='-', label='IC Inf')
-        
-        #plt.legend(['IC sup', 'IC central', 'IC inf'], loc='upper left')
-        #fig.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
-        plt.xlabel(x_legenda)
-        plt.ylabel(y_legenda)
-        plt.title(disciplina.upper())
-        plt.grid()
-
+    def plotGrafico(self, y, disciplina, x_legenda='x', y_legenda='y', saida='plot'):
+        fig, ax = plt.subplots()
+        #ax.plot(range(x), y)
+        ax.plot(range(0, len(y)), y)
+        ax.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
+        #ax.set_ylim(0, 1)
+        ax.grid()
         fig.savefig(saida + '.png')
