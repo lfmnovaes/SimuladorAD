@@ -183,7 +183,7 @@ if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.6]
     mu = 1
-    k_min = [1500]
+    k_min = [1900]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
@@ -195,15 +195,15 @@ if __name__ == '__main__':
 
             s.iniciaProcesso()
 
-            E_Nq = s.E_Nq_por_rodada
-            E_W = s.E_W_por_rodada
-            tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
-            pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
+            #E_Nq = s.E_Nq_por_rodada
+            #E_W = s.E_W_por_rodada
+            #tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
+            #pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
 
             infM_W, supM_W, centroMW, okMW = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
             infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
-            infV_W, supV_W, centroVW, okVW = c.ICVariancia(E_W)
-            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(E_Nq)
+            infV_W, supV_W, centroVW, okVW = c.ICVariancia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
+            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
             #infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
             #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
 
