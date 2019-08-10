@@ -7,7 +7,7 @@ import numpy as np
 class Calculadora(object):
     def __init__(self):
         self.ok = ""
-        self.precisaoIC = 0.05
+        self.precisaoIC = 0.1
     def ICMedia(self, media, variancia, n ):
         nQuad = math.sqrt(n)
         s = math.sqrt(variancia)
@@ -21,14 +21,14 @@ class Calculadora(object):
         centro = inf + (sup - inf)/2.0 # Centro dos intervalos
 
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
-        self.p = 100*tStudent*(s/(media*nQuad))
-        print(f'precisao tStudent: {self.p}')
-        if (self.p > self.precisaoIC):
+        p_tStudent = 100*tStudent*(s/(media*nQuad))
+        print(f'precisao tStudent: {p_tStudent}')
+        if (p_tStudent > self.precisaoIC):
             self.ok = False
         else:
             self.ok = True
         print(f'ok tStudent: {self.ok}')
-
+        
         # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
         return (inf, sup, centro, self.ok)
                 
@@ -48,17 +48,16 @@ class Calculadora(object):
         inf = (n-1)*s_quadrado/qui2Alpha
         centro = inf + (sup - inf)/2.0
 
-        self.p = (sup - inf)/ (sup + inf)
+        p_chi2 = (sup - inf)/ (sup + inf)
 
-        print(f'precisao chi: {self.p}')
-
-        if (self.p > self.precisaoIC) : # Se for maior do que 10% do valor central(precisão de 5%)
+        print(f'precisao chi: {p_chi2}')
+        self.ok = True
+        if (p_chi2 > self.precisaoIC) : # Se for maior do que 10% do valor central(precisão de 5%)
             self.ok = False #então não atingiu a precisão adequada
         else:
             self.ok = True
         
         print(f'ok chi: {self.ok}')
-
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (inf, sup, centro, self.ok)
 

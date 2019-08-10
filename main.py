@@ -118,6 +118,7 @@ class Simulador(object):
         # chama funcao para adicionar valor para estatisticas 
         #self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
         self.e_E_W.adicionaValor(self.somaW/n)
+        #self.e_E_W.adicionaValor(np.sum(tempos_de_fila)/n)
         
 
     def iniciaProcesso(self):
@@ -172,7 +173,7 @@ class Simulador(object):
                 else:
                     self.calculaNq()
                     #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
-                    print(f'rodada: {self.rodada_atual}')
+                    #print(f'rodada: {self.rodada_atual}')
                     self.adicionaE_WDaRodada()
                     self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
                     self.area_clientes_tempo = 0
@@ -188,9 +189,9 @@ class Simulador(object):
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.6]
+    valores_rho = [0.2]
     mu = 1
-    k_min = [2200]
+    k_min = [10000]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
@@ -226,7 +227,7 @@ if __name__ == '__main__':
                 print(f'I.C. de Nq = {infM_Nq} até {supM_Nq}')
                 print(f'Variância média de Nq = {centroVNq}')
                 print(f'I.C. da variância de Nq = {min(infV_Nq, supV_Nq)} até {max(infV_Nq, supV_Nq)}')
-                print(f'')
+                print(f'proxima semente: {random.random()}')
 
                 #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
