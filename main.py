@@ -25,15 +25,15 @@ class Simulador(object):
         self.k_atual = k
         self.n_rodadas = n_rodadas
         self.disciplina = disciplina #FCFS ou LCFS
-        self.tempo = 0.0
+        self.tempo = -1.0
         self.servidor_ocupado = False
-        self.rodada_atual = -1 #-1 para fase transiente
+        self.rodada_atual = 1 #-1 para fase transiente
 
         ##### LISTAS #####
         self.eventos = [] #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saídas
         self.fila_de_clientes = [] #lista que armazenará clientes até serem atendidos
         self.todos_clientes_atendidos = [] #lista de todos os clientes atendidos
-        self.qtdPessoasNaFilaPorRodada = [] #lista de pessoas na fila de espera por rodada
+        #self.qtdPessoasNaFilaPorRodada = [] #lista de pessoas na fila de espera por rodada
         self.E_W_por_rodada = [] #tempo médio gasto na fila de espera por rodada
         self.E_Nq_por_rodada = [] #tamanho médio da fila de espera por rodada
         self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
@@ -50,6 +50,8 @@ class Simulador(object):
         self.tempo_evento_anterior = 0.0
         self.tempo_inicio_rodada = 0.0
         self.area_clientes_tempo = 0 #cálculo incremental da área a cada chegada na fila e a cada entrada em serviço
+
+        self.chegadaClientesRodada = 0
 
         self.somaW = 0.0
 
@@ -79,37 +81,24 @@ class Simulador(object):
         tempo_da_rodada = self.tempo - self.tempo_inicio_rodada
         #self.E_Nq_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
         # chama funcao para adicionar valor para estatisticas
-        self.e_E_Nq.adicionaValor(self.area_clientes_tempo/tempo_da_rodada)
+        if tempo_da_rodada == 0:
+           self.e_E_Nq.adicionaValor(0)
+        else :
+            self.e_E_Nq.adicionaValor(self.area_clientes_tempo/tempo_da_rodada)
 
     def inserirEventoEmOrdem(self, evento): #insere e ordena
         self.eventos.append(evento)
         self.eventos = sorted(self.eventos, key=lambda evento: evento.tempo_evento)
 
     def geraEventoChegada(self, cliente):
-        tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_chegada)
+        self.chegadaClientesRodada += 1
+        tempo_evento = self.tempo + 1.0
         return Evento("evento_chegada", cliente, tempo_evento, self.rodada_atual)
 
     def geraEventoSaida(self, cliente):
-        tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_servico)
+        tempo_evento = self.tempo + 3.0
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
-    def testeFaseTransiente(self):
-        # T-student para mais de +120 amostras - para simples teste
-        # tStudent = 1.645
-        n = len(self.clientes_atendidos_rodada) #qtd de amostras
-        tStudent = c.tstudent(0.95, n-1)
-        #print("Valor de %f: , t-student: %f" % (n, tStudent))
-        tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        # Média amostral
-        mean = np.sum(tempos_de_fila)/n
-        # Variância amostral = SUM((Media - Media Amostral)^2) = S^2
-        s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
-        # cálculo do I.C. pela T-student
-        inferior = mean - (tStudent*(s/math.sqrt(n)))
-        superior = mean + (tStudent*(s/math.sqrt(n)))
-        centro = inferior + (superior - inferior)/2
-        if centro/10 < (superior - inferior):
-            self.transiente = False
 
     def adicionaE_WDaRodada(self):
         n = float(len(self.clientes_atendidos_rodada))
@@ -117,39 +106,44 @@ class Simulador(object):
         #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # chama funcao para adicionar valor para estatisticas 
         #self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
-        self.e_E_W.adicionaValor(self.somaW/n)
+        if n == 0: 
+            self.e_E_W.adicionaValor(0)
+        else:
+            self.e_E_W.adicionaValor(self.somaW/n)
         #self.e_E_W.adicionaValor(np.sum(tempos_de_fila)/n)
         
 
     def iniciaProcesso(self):
-        '''
-        r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
-        self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
-        self.defineSemente(r)
-        '''
-
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
-            evento_atual = self.eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
-            self.clientes_na_fila_evento_anterior = len(self.fila_de_clientes)
-            if evento_atual.tipo_de_evento == "evento_chegada": #testa para ver o tipo de evento que está sendo tratado
-                self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
-                evento_atual.cliente.tempo_chegada = self.tempo #cliente recebe seu tempo de chegada de acordo com o tempo que ocasionou a sua criação
-                self.fila_de_clientes.append(evento_atual.cliente) #adiciona o cliente a fila da MM1
-                self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria uma nova chegada de cliente na lista de eventos
-            elif evento_atual.tipo_de_evento == "evento_saida": #se o evento nao é de entrada então ele é de saída
-                self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
-                evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
-                # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
-                self.somaW += evento_atual.cliente.tempoEmEspera()
-                
-                self.servidor_ocupado = False #servidor deixa de estar ocupado
-                self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
-                self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
+            if self.eventos:
+                evento_atual = self.eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
+                self.clientes_na_fila_evento_anterior = len(self.fila_de_clientes)
+                if evento_atual.tipo_de_evento == "evento_chegada": #testa para ver o tipo de evento que está sendo tratado
+                    self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
+                    print(f'instante: {self.tempo}')
+                    evento_atual.cliente.tempo_chegada = self.tempo #cliente recebe seu tempo de chegada de acordo com o tempo que ocasionou a sua criação
+                    self.fila_de_clientes.append(evento_atual.cliente) #adiciona o cliente a fila da MM1
+                    print(f'cliente de chegada {evento_atual.cliente.tempo_chegada} entra na fila')
+                    if self.chegadaClientesRodada < 3:
+                        self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria uma nova chegada de cliente na lista de eventos
+                elif evento_atual.tipo_de_evento == "evento_saida": #se o evento nao é de entrada então ele é de saída
+                    self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
+                    print(f'instante: {self.tempo}')
+                    evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
+                    # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
+                    self.somaW += evento_atual.cliente.tempoEmEspera()
+                    
+                    self.servidor_ocupado = False #servidor deixa de estar ocupado
+                    self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
+                    self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
+
+                    print(f'cliente de chegada {evento_atual.cliente.tempo_chegada} sai na fila')
 
             self.somaArea() #cálculo da area de pessoas por tempo para ser utilizado para calcular E_Nq_por_rodada
+            print('bla')
             self.tempo_evento_anterior = self.tempo #atualiza o valor do tempo do evento que acabou de acontecer
-            self.qtdPessoasNaFilaPorRodada.append(len(self.fila_de_clientes)) #armazena qtd de pessoas atual num vetor
+            #self.qtdPessoasNaFilaPorRodada.append(len(self.fila_de_clientes)) #armazena qtd de pessoas atual num vetor
 
             #Se o servidor estiver liberado e ainda existir alguém na fila
             if (not self.servidor_ocupado and len(self.fila_de_clientes) != 0): #então o servidor serve o próximo cliente
@@ -158,34 +152,29 @@ class Simulador(object):
                 elif (self.disciplina == "lcfs"): #Na LCFS, clientes serão removidos pela direita, que entrou a menos tempo
                     cliente = self.fila_de_clientes.pop()
                 cliente.tempo_comeco_servico = self.tempo #atualiza o tempo em que o cliente entrou em serviço
+                print(f'Cliente de chegada {cliente.tempo_chegada} entra em servico')
                 self.inserirEventoEmOrdem(self.geraEventoSaida(cliente)) #gera o evento de saída que essa entrada em serviço irá ocasionar
                 self.servidor_ocupado = True
 
-            if len(self.clientes_atendidos_rodada) >= self.k_atual:
-                if self.transiente:
-                    self.testeFaseTransiente()
-                    #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
-                    if not self.transiente or len(self.clientes_atendidos_rodada) > (10*self.k_atual):
-                        self.rodada_atual += 1
-                        self.clientes_atendidos_rodada = []
-                        self.tempo_inicio_rodada = self.tempo
-                        self.area_clientes_tempo = 0
-                else:
-                    self.calculaNq()
-                    #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
-                    #print(f'rodada: {self.rodada_atual}')
-                    self.adicionaE_WDaRodada()
-                    self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
-                    self.area_clientes_tempo = 0
-                    self.somaW = 0.0
-                    self.tempo_inicio_rodada = self.tempo
-                    self.rodada_atual += 1 #indo para próxima rodada
-                    '''
-                    r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
-                    print(f'valor de rodada: {self.rodada_atual}')
-                    self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
-                    self.defineSemente(r)
-                    '''
+            if ((self.tempo % 9) == 0 and self.tempo > 0):
+                self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual)))
+                print('agendar cliente para proxima rodada')
+            
+            if ((self.tempo % 10) == 0 and self.tempo > 0):
+                self.calculaNq()
+                print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
+                print(f'fim da rodada: {self.rodada_atual}')
+                self.adicionaE_WDaRodada()
+                self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
+                self.area_clientes_tempo = 0
+                self.somaW = 0.0
+                self.chegadaClientesRodada = 0
+                self.tempo_inicio_rodada = self.tempo
+                self.rodada_atual += 1 #indo para próxima rodada
+            
+
+                
+
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
