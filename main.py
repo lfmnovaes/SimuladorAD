@@ -188,10 +188,10 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.2]
+    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    #valores_rho = [0.2]
     mu = 1
-    k_min = [10000]
+    k_min = [1500]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
@@ -209,12 +209,41 @@ if __name__ == '__main__':
             #pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
             # Lista contendo valores analiticos.
 
-            infM_W, supM_W, centroMW, okMW = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
-            infM_Nq, supM_Nq, centroMNq, okMNq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
-            infV_W, supV_W, centroVW, okVW = c.ICVariancia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
-            infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVariancia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
+            infM_W, supM_W, centroMW, okMW, precE_W = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
+            infM_Nq, supM_Nq, centroMNq, okMNq, precE_Nq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
+            infV_W, supV_W, centroVW, okVW, precV_W = c.ICVariancia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),s.e_E_W.n)
+            infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq = c.ICVariancia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),s.e_E_Nq.n)
             #infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
             #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
+            if disciplina == "lcfs":
+                v_w_Analit = (2*lamb + lamb**2 + lamb**3)/(1-lamb)**3 
+            elif disciplina == "fcfs":        
+                v_w_Analit = (2*lamb - lamb**2)/(1-lamb)**2
+
+            e_w_Analit = lamb/(1-lamb)
+            v_Nq_Analit = (lamb**2 + lamb**3 - lamb**4)/(1-lamb)**2
+            e_Nq_Analit = lamb**2/(1-lamb)
+
+            print(f'Resultados com lambda = {lamb}, k = {k}, Disciplina: {disciplina}')
+            print("E[W] centro do IC = %.4f" % (centroMW))
+            print("E[W] analitico = %.4f" % (e_w_Analit))
+            print("I.C. de E[W] = %.4f ate %.4f" % (infM_W,supM_W))
+            print("Precisao do I.C. do E[W] = %.4f" % (precE_W))
+            print("V(W) = %.4f" % (centroVW))
+            print("V(W) analitico = %.4f" % (v_w_Analit))
+            print("I.C. de V(W) = %.4f ate %.4f" % (min(infV_W, supV_W), (max(infV_W, supV_W))))
+            print("Precisao do IC de V(W) = %.4f" % (precV_W))
+            print("E[Nq] = %.4f" % (centroMNq))
+            print("E[Nq] analitico = %.4f" % (e_Nq_Analit))
+            print("I.C. de E[Nq] = %.4f ate %.4f" % (infM_Nq, supM_Nq))
+            print("Precisao do I.C. de E[Nq] = %.4f" % (precE_Nq))
+            print("V(Nq) = %.4f" % (centroVNq))
+            print("V(Nq) analitico = %.4f" % (v_Nq_Analit))
+            print("I.C. de V(Nq) = %.4f ate %.4f" % (min(infV_Nq, supV_Nq), (max(infV_Nq, supV_Nq))))
+            print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))
+
+            print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
+
 
             if (okMW and okVW and okMNq and okVNq):
                 print(f'Resultados com lambda = {lamb}, k = {k}')
@@ -233,8 +262,8 @@ if __name__ == '__main__':
                 #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
                 #c.myPlot(n_rodadas, pessoas_na_fila)
-            else:
-                print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
-                k_min.append(k+100)
-                print(f'Novo valor de k = {k_min}')
+            #else:
+            #    print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
+            #    k_min.append(k+100)
+            #    print(f'Novo valor de k = {k_min}')
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')

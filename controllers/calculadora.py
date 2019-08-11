@@ -22,15 +22,14 @@ class Calculadora(object):
 
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
         p_tStudent = 100*tStudent*(s/(media*nQuad))
-        print(f'precisao tStudent: {p_tStudent}')
+        #print(f'precisao tStudent: {p_tStudent}')
         if (p_tStudent > self.precisaoIC):
             self.ok = False
         else:
             self.ok = True
-        print(f'ok tStudent: {self.ok}')
         
         # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
-        return (inf, sup, centro, self.ok)
+        return (inf, sup, centro, self.ok, p_tStudent)
                 
     def ICVariancia(self, media, variancia, n):
         # Qui-quadrado para medir a variância
@@ -50,16 +49,15 @@ class Calculadora(object):
 
         p_chi2 = (sup - inf)/ (sup + inf)
 
-        print(f'precisao chi: {p_chi2}')
+        #print(f'precisao chi: {p_chi2}')
         self.ok = True
         if (p_chi2 > self.precisaoIC) : # Se for maior do que 10% do valor central(precisão de 5%)
             self.ok = False #então não atingiu a precisão adequada
         else:
             self.ok = True
         
-        print(f'ok chi: {self.ok}')
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
-        return (inf, sup, centro, self.ok)
+        return (inf, sup, centro, self.ok, p_chi2)
 
 
 
