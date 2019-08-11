@@ -97,8 +97,8 @@ class Simulador(object):
         # T-student para mais de +120 amostras - para simples teste
         # tStudent = 1.645
         n = len(self.clientes_atendidos_rodada) #qtd de amostras
-        tStudent = c.tstudent(0.95, n-1)
-        #print("Valor de %f: , t-student: %f" % (n, tStudent))
+        tStudent = c.tstudent(0.975, n-1)
+        print(f'Valor de n:{n}, t-student: {tStudent}')
         tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # Média amostral
         mean = np.sum(tempos_de_fila)/n
@@ -108,7 +108,8 @@ class Simulador(object):
         inferior = mean - (tStudent*(s/math.sqrt(n)))
         superior = mean + (tStudent*(s/math.sqrt(n)))
         centro = inferior + (superior - inferior)/2
-        if centro/10 < (superior - inferior):
+        print(f'centro: {centro}, inf: {inferior}, sup: {superior}, dist {superior - inferior}')
+        if centro/4 < (superior - inferior):
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
@@ -191,7 +192,7 @@ if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = [0.2]
     mu = 1
-    k_min = [10000]
+    k_min = [2100]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
