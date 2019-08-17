@@ -21,7 +21,7 @@ class Calculadora(object):
         centro = inf + (sup - inf)/2.0 # Centro dos intervalos
 
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
-        p_tStudent = 100*tStudent*(s/(media*nQuad))
+        p_tStudent = tStudent*(s/(media*nQuad))
         #print(f'precisao tStudent: {p_tStudent}')
         if (p_tStudent > self.precisaoIC):
             self.ok = False

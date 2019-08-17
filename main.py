@@ -45,6 +45,7 @@ class Simulador(object):
         self.e_E_Nq = EstatisticasAmostrais()
         self.e_V_W = EstatisticasAmostrais()
         self.e_V_Nq = EstatisticasAmostrais()
+        self.calcVarTransiente = EstatisticasAmostrais() # classe com metodos para calcular media e variancia na fase transiente
 
         self.clientes_na_fila_evento_anterior = 0
         self.tempo_evento_anterior = 0.0
@@ -52,6 +53,9 @@ class Simulador(object):
         self.area_clientes_tempo = 0 #cálculo incremental da área a cada chegada na fila e a cada entrada em serviço
 
         self.somaW = 0.0
+        #Incrementa conforme os cliente forem atendidos
+        # (mais rapido que percorrer lista self.clientes_atendidos_rodada = [])
+        self.clientes_atendidos_rodada_inc = 0 
 
     def defineSemente(self, semente):
         random.seed(semente)
@@ -99,25 +103,31 @@ class Simulador(object):
         n = len(self.clientes_atendidos_rodada) #qtd de amostras
         tStudent = c.tstudent(0.95, n-1)
         #print("Valor de %f: , t-student: %f" % (n, tStudent))
-        tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
+        #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # Média amostral
-        mean = np.sum(tempos_de_fila)/n
+        #mean = np.sum(tempos_de_fila)/n
+        mean = self.calcVarTransiente.get_muChapeu()
         # Variância amostral = SUM((Media - Media Amostral)^2) = S^2
-        s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
+        #s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
+        s = math.sqrt(self.calcVarTransiente.get_sigmaChapeu())
         # cálculo do I.C. pela T-student
-        inferior = mean - (tStudent*(s/math.sqrt(n)))
-        superior = mean + (tStudent*(s/math.sqrt(n)))
-        centro = inferior + (superior - inferior)/2
-        if centro/10 < (superior - inferior):
+        #inferior = mean - (tStudent*(s/math.sqrt(n)))
+        #superior = mean + (tStudent*(s/math.sqrt(n)))
+        #centro = inferior + (superior - inferior)/2
+        precisao_tstudent = tStudent*(s/mean*math.sqrt(n))
+        if precisao_tstudent < 0.2:
             self.transiente = False
+            print(f'------ Sair da fase transiente: {(datetime.now() - inicioSim)} ------')
 
     def adicionaE_WDaRodada(self):
-        n = float(len(self.clientes_atendidos_rodada))
+        k = float(len(self.clientes_atendidos_rodada))
+        print(f' len e k_inc: {len(self.clientes_atendidos_rodada)} = {self.clientes_atendidos_rodada_inc}  ------')
         # mudar para somar incrementalmente e dividir por len(clientes_atendidos)
         #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # chama funcao para adicionar valor para estatisticas 
         #self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
-        self.e_E_W.adicionaValor(self.somaW/n)
+        self.e_E_W.adicionaValor(self.somaW/k)
+        print(f'soma inc e classe calc iguais ? {somaW/k == self.calcVarTransiente.get_muChapeu()}')
         #self.e_E_W.adicionaValor(np.sum(tempos_de_fila)/n)
         
 
@@ -142,10 +152,14 @@ class Simulador(object):
                 evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
                 # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
                 self.somaW += evento_atual.cliente.tempoEmEspera()
+                self.calcVarTransiente.adicionaValor(evento_atual.cliente.tempoEmEspera())
+
+                
                 
                 self.servidor_ocupado = False #servidor deixa de estar ocupado
                 self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
                 self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
+                self.clientes_atendidos_rodada_inc += 1
 
             self.somaArea() #cálculo da area de pessoas por tempo para ser utilizado para calcular E_Nq_por_rodada
             self.tempo_evento_anterior = self.tempo #atualiza o valor do tempo do evento que acabou de acontecer
@@ -170,6 +184,8 @@ class Simulador(object):
                         self.clientes_atendidos_rodada = []
                         self.tempo_inicio_rodada = self.tempo
                         self.area_clientes_tempo = 0
+                        self.somaW = 0.0
+                        self.clientes_atendidos_rodada_inc = 0
                 else:
                     self.calculaNq()
                     #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
@@ -178,6 +194,7 @@ class Simulador(object):
                     self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
                     self.area_clientes_tempo = 0
                     self.somaW = 0.0
+                    self.clientes_atendidos_rodada_inc = 0
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
                     '''
@@ -188,10 +205,10 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    #valores_rho = [0.2]
+    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    valores_rho = [0.4]
     mu = 1
-    k_min = [1500]
+    k_min = [300]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
