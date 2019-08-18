@@ -56,7 +56,12 @@ class Simulador(object):
         self.somaW = 0.0
         #Incrementa conforme os cliente forem atendidos
         # (mais rapido que percorrer lista self.clientes_atendidos_rodada = [])
-        self.clientes_atendidos_rodada_inc = 0 
+        self.clientes_atendidos_rodada_inc = 0
+        
+        if disciplina == "lcfs":
+            self.v_w_Analit = (2*lamb - lamb**2 + lamb**3)/(1-lamb)**3 
+        elif disciplina == "fcfs":        
+            self.v_w_Analit = (2*lamb - lamb**2)/(1-lamb)**2       
 
     def defineSemente(self, semente):
         random.seed(semente)
@@ -102,26 +107,29 @@ class Simulador(object):
         # T-student para mais de +120 amostras - para simples teste
         # tStudent = 1.645
         #n = len(self.clientes_atendidos_rodada) #qtd de amostras
-        n = self.clientes_atendidos_rodada_inc
+        n = self.e_V_W.n
         tStudent = c.tstudent(0.95, n-1)
         #print(f' len e k_inc: {len(self.clientes_atendidos_rodada)} = {self.clientes_atendidos_rodada_inc}  ------')
         #print("Valor de %f: , t-student: %f" % (n, tStudent))
         #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # Média amostral
         #mean = np.sum(tempos_de_fila)/n
-        mean = self.e_Wij.get_muChapeu()
+        mean = self.e_V_W.get_muChapeu()
         #print(f'mean = {mean}')
         # Variância amostral = SUM((Media - Media Amostral)^2) = S^2
         #s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
-        s = math.sqrt(self.e_Wij.get_sigmaChapeu())
+        s = math.sqrt(self.e_V_W.get_sigmaChapeu())
         # cálculo do I.C. pela T-student
         inferior = mean - (tStudent*(s/math.sqrt(n)))
         superior = mean + (tStudent*(s/math.sqrt(n)))
-        #centro = inferior + (superior - inferior)/2
+        centro = inferior + (superior - inferior)/2
         #precisao_tstudent = tStudent*(s/mean*math.sqrt(n))
         precisao_tstudent = (superior - inferior) / (superior + inferior)
-        #print(f'precTStudent: {precisao_tstudent}')
+        print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n}; s:{s}')
+        print(f'media de sigmaChapeu^2: {mean}; precTStudent: {precisao_tstudent}')
+        print(f'inf:{inferior}; sup:{superior}; centro:{centro}')
         if precisao_tstudent < 0.15:
+            print(f'saiu da fTransiente com {self.clientes_atendidos_rodada_inc} clientes')
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
@@ -142,9 +150,9 @@ class Simulador(object):
         '''
         r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
         self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
-        self.defineSemente(r)
         '''
-
+        self.defineSemente(0.6746581221643905)
+        
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
             evento_atual = self.eventos.pop(0) #retira o primeiro elemento da lista mantendo a ordem cronológica
@@ -160,6 +168,9 @@ class Simulador(object):
                 # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
                 #self.somaW += evento_atual.cliente.tempoEmEspera()
                 self.e_Wij.adicionaValor(evento_atual.cliente.tempoEmEspera())
+                if self.transiente:
+                    #print(f'sigmaChapeu^2 atual: {self.e_Wij.get_sigmaChapeu()}')
+                    self.e_V_W.adicionaValor(self.e_Wij.get_sigmaChapeu())
                
                 self.servidor_ocupado = False #servidor deixa de estar ocupado
                 self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
@@ -181,10 +192,13 @@ class Simulador(object):
                 self.servidor_ocupado = True
 
             if self.clientes_atendidos_rodada_inc >= (self.k_atual):
-                if self.transiente:
-                    self.testeFaseTransiente()
+                #print(f'diferenca para valor analitico: {abs(self.e_V_W.get_sigmaChapeu() - self.v_w_Analit)}')
+                if self.transiente :
+                    if self.clientes_atendidos_rodada_inc >= (self.k_atual*10):
+                        self.testeFaseTransiente()
                     #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
-                    if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
+                    #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
+                    if not self.transiente:
                         self.rodada_atual += 1
                         self.clientes_atendidos_rodada = []
                         self.tempo_inicio_rodada = self.tempo
@@ -192,6 +206,7 @@ class Simulador(object):
                         self.somaW = 0.0
                         self.clientes_atendidos_rodada_inc = 0
                         self.e_Wij.zeraValores()
+                        self.e_V_W.zeraValores()
                 else:
                     self.calculaNq()
                     #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
@@ -212,8 +227,8 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.4]
+    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    #valores_rho = [0.9]
     mu = 1
     k_min = [10000]
     n_rodadas = 3200
@@ -243,11 +258,12 @@ if __name__ == '__main__':
 
             infM_W, supM_W, centroMW, okMW, precE_W = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),n_rodadas, e_w_Analit)
             infM_Nq, supM_Nq, centroMNq, okMNq, precE_Nq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, e_Nq_Analit)
-            infV_W, supV_W, centroVW, okVW, precV_W = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
-            infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq = c.ICVariancia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
+            infV_W, supV_W, centroVW, okVW, precV_W = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit, k)
+            infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq = c.ICVariancia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit, k)
             #infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
             #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
 
+            print(okMW, okVW, okMNq, okVNq)
 
             print(f'Resultados com lambda = {lamb}, k = {k}, Disciplina: {disciplina}')
             print("E[W] centro do IC = %.4f" % (centroMW))
@@ -270,9 +286,8 @@ if __name__ == '__main__':
             '''
 
             print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
-
-
-            if (okMW and okVW and okMNq and okVNq):
+            print(okMW, okVW, okMNq, okVNq)
+            if (okMW==True and okVW==True and okMNq==True and okVNq==True):
                 '''
                 print(f'Resultados com lambda = {lamb}, k = {k}')
                 print(f'Tempo médio de espera na fila = {centroMW}')
@@ -294,6 +309,6 @@ if __name__ == '__main__':
                 #c.myPlot(n_rodadas, pessoas_na_fila)
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
-                k_min.append(k+100)
-                print(f'Novo valor de k = {k_min}')
+                #k_min.append(k+100)
+                #print(f'Novo valor de k = {k_min}')
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
