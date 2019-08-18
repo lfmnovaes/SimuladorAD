@@ -8,10 +8,10 @@ class Calculadora(object):
     def __init__(self):
         self.ok = ""
         self.precisaoIC = 0.1
-    def ICMedia(self, media, variancia, n ):
+    def ICMedia(self, media, variancia, n , v_analitico):
         nQuad = math.sqrt(n)
         s = math.sqrt(variancia)
-        tStudent = 1.960 # T-student para 120 amostras
+        tStudent = 1.960 # T-student para n>30 amostras
 
 
         # Variância das amostras: SOMA((Media - Media das amostras)^2) = S^2
@@ -25,35 +25,35 @@ class Calculadora(object):
         #print(f'precisao tStudent: {p_tStudent}')
         if (p_tStudent > self.precisaoIC):
             self.ok = False
-        else:
+        elif (inf < v_analitico) and (sup > v_analitico):
             self.ok = True
         
         # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
         return (inf, sup, centro, self.ok, p_tStudent)
                 
-    def ICVariancia(self, media, variancia, n):
+    def ICVariancia(self, media, variancia, n, v_analitico):
         # Qui-quadrado para medir a variância
-        s  = math.sqrt(variancia)
+        #s  = math.sqrt(variancia)
+        s_quadrado = variancia
 
         # Usando função auxiliar (chi2.isf) para calcular o valor de qui-quadrado para n = 3200
         qui2Alpha = chi2.isf(q=0.025, df=n-1)
         qui2MenosAlpha = chi2.isf(q=0.975, df=n-1)
-
-        # Variância das amostras: SOMA((Media - Media das Amostras)^2) = S^2
-        s_quadrado = variancia
+        print(f'qui2alpha = {qui2Alpha}; qui2MenosAlpha = {qui2MenosAlpha}')
+        
 
         # Calculo do IC para qui-quadrado
         sup = (n-1)*s_quadrado/qui2MenosAlpha
         inf = (n-1)*s_quadrado/qui2Alpha
         centro = inf + (sup - inf)/2.0
 
-        p_chi2 = (sup - inf)/ (sup + inf)
+        p_chi2 = (qui2Alpha - qui2MenosAlpha)/ (qui2Alpha + qui2MenosAlpha)
 
         #print(f'precisao chi: {p_chi2}')
         self.ok = True
         if (p_chi2 > self.precisaoIC) : # Se for maior do que 10% do valor central(precisão de 5%)
             self.ok = False #então não atingiu a precisão adequada
-        else:
+        elif (inf < v_analitico) and (sup > v_analitico):
             self.ok = True
         
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
