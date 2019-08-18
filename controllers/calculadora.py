@@ -7,7 +7,64 @@ import numpy as np
 class Calculadora(object):
     def __init__(self):
         self.ok = ""
+        self.precisaoIC = 0.1
+    def ICMedia(self, media, variancia, n , v_analitico):
+        nQuad = math.sqrt(n)
+        s = math.sqrt(variancia)
+        tStudent = 1.960 # T-student para n>30 amostras
 
+
+        # Variância das amostras: SOMA((Media - Media das amostras)^2) = S^2
+        #s = math.sqrt(np.sum([(float(element) - float(media))**2 for element in lista_de_medias])/(n-1.0))
+        inf = media - (tStudent*(s/nQuad)) # IC(inferior) pela T-student
+        sup = media + (tStudent*(s/nQuad)) # IC(superior) pela T-student
+        centro = inf + (sup - inf)/2.0 # Centro dos intervalos
+
+        # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
+        p_tStudent = tStudent*(s/(media*nQuad))
+        #print(f'precisao tStudent: {p_tStudent}')
+        if (p_tStudent <= self.precisaoIC) == True and (inf < v_analitico)== True and (sup > v_analitico)== True:
+            self.ok = True
+        else :
+            self.ok = False
+        
+        # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
+        return (inf, sup, centro, self.ok, p_tStudent)
+                
+    def ICVariancia(self, media, variancia, n, v_analitico, k):
+        # Qui-quadrado para medir a variância
+        #s  = math.sqrt(variancia)
+        s_quadrado = media
+
+        # Usando função auxiliar (chi2.isf) para calcular o valor de qui-quadrado para n = 3200
+        qui2Alpha = chi2.isf(q=0.025, df=n-1)
+        qui2MenosAlpha = chi2.isf(q=0.975, df=n-1)
+        #print(f'qui2alpha = {qui2Alpha}; qui2MenosAlpha = {qui2MenosAlpha}')
+        
+
+        # Calculo do IC para qui-quadrado
+        sup = ((n-1)*s_quadrado)/qui2MenosAlpha
+        inf = ((n-1)*s_quadrado)/qui2Alpha
+        centro = inf + (sup - inf)/2.0
+
+        p_chi2 = (qui2Alpha - qui2MenosAlpha)/ (qui2Alpha + qui2MenosAlpha)
+
+        #print(f'precisao chi: {p_chi2}')
+        if (p_chi2 <= self.precisaoIC) == True and (inf < v_analitico)== True and (sup > v_analitico)== True:
+            self.ok = True
+        else :
+            self.ok = False
+        
+        ###  TESTE MUDAR !!
+        self.ok = True
+        
+        
+        #print(f'sup= {sup}; inf={inf}; v_anal={v_analitico}; ok={self.ok}')
+        #print(f'sup > v_anal? {sup>v_analitico}; inf<v_anal?{inf<v_analitico};')
+        # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
+        return (inf, sup, centro, self.ok, p_chi2)
+
+    '''
     def ICMedia(self, lista_de_medias):
         tStudent = 1.645 # T-student para 120 amostras
         n = len(lista_de_medias) # Quantidade de amostras
@@ -27,7 +84,7 @@ class Calculadora(object):
 
         # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
         return (inf, sup, centro, self.ok)
-
+            
     def ICVariancia(self, lista_de_medias):
         # Qui-quadrado para medir a variância
         n = len(lista_de_medias) # Quantidade de amostras
@@ -88,6 +145,7 @@ class Calculadora(object):
 
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (inf, sup, centro, self.ok)
+    '''
 
     def tstudent(self, alpha, gl):
         return scipy.stats.t.ppf(alpha, df=gl)
