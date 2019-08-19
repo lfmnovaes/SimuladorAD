@@ -31,7 +31,7 @@ class Calculadora(object):
         # retorna o limite inferior, limite superior, o valor central e se atingiu a precisão
         return (inf, sup, centro, self.ok, p_tStudent)
                 
-    def ICVariancia(self, media, variancia, n, v_analitico, k):
+    def ICVariancia(self, media, variancia, n, v_analitico):
         # Qui-quadrado para medir a variância
         #s  = math.sqrt(variancia)
         s_quadrado = media
@@ -77,7 +77,7 @@ class Calculadora(object):
          
 
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
-        return (infChi, supChi, centroChi, self.ok, p_chi2)
+        return (infChi, supChi, centroChi, self.ok, p_chi2, sobreposicaoICs)
 
     '''
     def ICMedia(self, lista_de_medias):

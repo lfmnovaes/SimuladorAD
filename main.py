@@ -37,9 +37,12 @@ class Simulador(object):
         self.E_W_por_rodada = [] #tempo médio gasto na fila de espera por rodada
         self.E_Nq_por_rodada = [] #tamanho médio da fila de espera por rodada
         self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
+        # P_Nq e a estrutura que armazena uma quantidade de clientes na fila e o intervalo de tempo que a fila permanexe com essa quantidade
+        # Essa estrutura sera importante para gerar a pmf de Nq e conseguentemente calcular V(Nq)
+        #self.P_Nq = [0 for i in range(k)] 
         
-        self.sementesUsadas = [] #armazena sequencia de sementes usadas
-        self.distanciaSementes = 0.0001 # Define distancia para sementes usadas.
+        #self.sementesUsadas = [] #armazena sequencia de sementes usadas
+        #self.distanciaSementes = 0.0001 # Define distancia para sementes usadas.
         
         self.e_E_W = EstatisticasAmostrais()
         self.e_E_Nq = EstatisticasAmostrais()
@@ -52,16 +55,12 @@ class Simulador(object):
         self.tempo_evento_anterior = 0.0
         self.tempo_inicio_rodada = 0.0
         self.area_clientes_tempo = 0 #cálculo incremental da área a cada chegada na fila e a cada entrada em serviço
+        self.area_clientes_tempoQuad = 0
 
         self.somaW = 0.0
         #Incrementa conforme os cliente forem atendidos
         # (mais rapido que percorrer lista self.clientes_atendidos_rodada = [])
-        self.clientes_atendidos_rodada_inc = 0
-        
-        if disciplina == "lcfs":
-            self.v_w_Analit = (2*lamb - lamb**2 + lamb**3)/(1-lamb)**3 
-        elif disciplina == "fcfs":        
-            self.v_w_Analit = (2*lamb - lamb**2)/(1-lamb)**2       
+        self.clientes_atendidos_rodada_inc = 0    
 
     def defineSemente(self, semente):
         random.seed(semente)
@@ -83,13 +82,20 @@ class Simulador(object):
 
     
     def somaArea(self): #função para o cálculo de pessoas na fila
-        self.area_clientes_tempo += (self.tempo - self.tempo_evento_anterior) * self.clientes_na_fila_evento_anterior
+        self.area_clientes_tempo += ((self.tempo - self.tempo_evento_anterior) * self.clientes_na_fila_evento_anterior)
+        self.area_clientes_tempoQuad += ((self.tempo - self.tempo_evento_anterior) * self.clientes_na_fila_evento_anterior*self.clientes_na_fila_evento_anterior)
 
     def calculaNq(self): #função para calcular a quantidade média de pessoas na fila da mm1
+        soma = somQuad = 0
+        E_Nq = E_Nq_2 = 0.0
         tempo_da_rodada = self.tempo - self.tempo_inicio_rodada
-        #self.E_Nq_por_rodada.append(self.area_clientes_tempo/tempo_da_rodada)
         # chama funcao para adicionar valor para estatisticas
-        self.e_E_Nq.adicionaValor(self.area_clientes_tempo/tempo_da_rodada)
+        E_Nq = self.area_clientes_tempo/tempo_da_rodada
+        E_Nq_2 = self.area_clientes_tempoQuad/tempo_da_rodada
+        self.e_E_Nq.adicionaValor(E_Nq)
+        self.e_V_Nq.adicionaValor(E_Nq_2 - E_Nq**2)
+        #print(f'tempoRodada: {tempo_da_rodada}; somatorio dos tempos da lista: {sum(self.P_Nq)}')
+        #print(f'V(Nqi)= {somQuad/tempo_da_rodada - ((soma/tempo_da_rodada)*(soma/tempo_da_rodada))}')
 
     def inserirEventoEmOrdem(self, evento): #insere e ordena
         self.eventos.append(evento)
@@ -104,20 +110,14 @@ class Simulador(object):
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
     def testeFaseTransiente(self):
-        # T-student para mais de +120 amostras - para simples teste
-        # tStudent = 1.645
-        #n = len(self.clientes_atendidos_rodada) #qtd de amostras
         n = self.e_V_W.n
         tStudent = c.tstudent(0.95, n-1)
         #print(f' len e k_inc: {len(self.clientes_atendidos_rodada)} = {self.clientes_atendidos_rodada_inc}  ------')
         #print("Valor de %f: , t-student: %f" % (n, tStudent))
-        #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
         # Média amostral
-        #mean = np.sum(tempos_de_fila)/n
         mean = self.e_V_W.get_muChapeu()
         #print(f'mean = {mean}')
-        # Variância amostral = SUM((Media - Media Amostral)^2) = S^2
-        #s = math.sqrt(np.sum([(float(element) - float(mean))**2 for element in tempos_de_fila])/(n-1.0))
+        # desvio padrao 
         s = math.sqrt(self.e_V_W.get_sigmaChapeu())
         # cálculo do I.C. pela T-student
         inferior = mean - (tStudent*(s/math.sqrt(n)))
@@ -133,19 +133,13 @@ class Simulador(object):
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
-        #k = float(len(self.clientes_atendidos_rodada))
         k = self.clientes_atendidos_rodada_inc
-        # mudar para somar incrementalmente e dividir por len(clientes_atendidos)
-        #tempos_de_fila = [cliente.tempoEmEspera() for cliente in self.clientes_atendidos_rodada]
-        #print(f'somaW/k={self.somaW/k}, muChapeu={self.e_Wij.get_muChapeu()}')
-        # chama funcao para adicionar valor para estatisticas 
-        #self.E_W_por_rodada.append(np.sum(tempos_de_fila)/n)
+        # chama funcao para adicionar media dos k clientes da rodada na classe que calcula de forma incremental os estimadores da media e da variancia 
         self.e_E_W.adicionaValor(self.e_Wij.get_muChapeu())
-        #print(f'sigmaChapeu = {self.e_Wij.get_sigmaChapeu()}')
+        # chama funcao para adicionar a variancia dos tempos de espera dos k clientes da rodada. 
+        # Essa classe fornece a media dessas variancias para calculo da IC da variancia posteriormente
         self.e_V_W.adicionaValor(self.e_Wij.get_sigmaChapeu())
-        #self.e_E_W.adicionaValor(np.sum(tempos_de_fila)/n)
         
-
     def iniciaProcesso(self):
         '''
         r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
@@ -201,20 +195,26 @@ class Simulador(object):
                         self.clientes_atendidos_rodada = []
                         self.tempo_inicio_rodada = self.tempo
                         self.area_clientes_tempo = 0
+                        self.area_clientes_tempoQuad = 0
                         self.somaW = 0.0
                         self.clientes_atendidos_rodada_inc = 0
                         self.e_Wij.zeraValores()
                         self.e_V_W.zeraValores()
+                        self.P_Nq = [0 for i in range(k)] 
+
                 else:
                     self.calculaNq()
                     #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
                     #print(f'rodada: {self.rodada_atual}')
                     self.adicionaE_WDaRodada()
+                    #print(f'sigmaChapeuQuad: {self.e_V_Nq.get_sigmaChapeu()}')
                     self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
                     self.area_clientes_tempo = 0
+                    self.area_clientes_tempoQuad = 0
                     self.somaW = 0.0
                     self.clientes_atendidos_rodada_inc = 0
                     self.e_Wij.zeraValores()
+                    self.P_Nq = [0 for i in range(k)] 
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
                     '''
@@ -225,15 +225,17 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.4]
+    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    #valores_rho = [0.6]
     mu = 1
-    k_min = [3500]
+    k_min = [10000]
     n_rodadas = 3200
     inicioSim = datetime.now()
+
     print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
+        okMW = okMNq = okVW = okVNq = sobreposicaoVW, sobreposicaoVNq False
         for k in k_min:
             s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
@@ -254,50 +256,46 @@ if __name__ == '__main__':
             v_Nq_Analit = (lamb**2 + lamb**3 - lamb**4)/(1-lamb)**2
             e_Nq_Analit = lamb**2/(1-lamb)
 
-            infM_W, supM_W, centroMW, okMW, precE_W = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),n_rodadas, e_w_Analit)
-            infM_Nq, supM_Nq, centroMNq, okMNq, precE_Nq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, e_Nq_Analit)
-            infV_W, supV_W, centroVW, okVW, precV_W = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit, k)
-            infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq = c.ICVariancia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit, k)
-            #infV_W, supV_W, centroVW, okVW = c.ICVarianciaIncremental(E_W)
-            #infV_Nq, supV_Nq, centroVNq, okVNq = c.ICVarianciaIncremental(E_Nq)
+            if not okMW:
+                infM_W, supM_W, centroMW, okMW, precE_W = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),n_rodadas, e_w_Analit)
+            if not okMNq:
+                infM_Nq, supM_Nq, centroMNq, okMNq, precE_Nq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, e_Nq_Analit)
+            if not okVW:
+                infV_W, supV_W, centroVW, okVW, precV_W, sobreposicaoVW = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
+            if not okVNq:    
+                infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq, sobreposicaoVNq = c.ICVariancia(s.e_V_Nq.get_muChapeu(),s.e_V_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
 
-            print(okMW, okVW, okMNq, okVNq)
+
+            #print(okMW, okVW, okMNq, okVNq)
 
             print(f'Resultados com lambda = {lamb}, k = {k}, Disciplina: {disciplina}')
+            print('---//---')
             print("E[W] centro do IC = %.4f" % (centroMW))
-            print("E[W] analitico = %.4f" % (e_w_Analit))
             print("I.C. de E[W] = %.4f ate %.4f" % (infM_W,supM_W))
+            print("E[W] analitico = %.4f" % (e_w_Analit))
             print("Precisao do I.C. do E[W] = %.4f" % (precE_W))
+            print('---//---')
             print("V(W) = %.4f" % (centroVW))
+            print("I.C. de V(W) = %.4f ate %.4f" % (infV_W, supV_W))
             print("V(W) analitico = %.4f" % (v_w_Analit))
-            print("I.C. de V(W) = %.4f ate %.4f" % (min(infV_W, supV_W), (max(infV_W, supV_W))))
             print("Precisao do IC de V(W) = %.4f" % (precV_W))
-            print("E[Nq] = %.4f" % (centroMNq))
-            print("E[Nq] analitico = %.4f" % (e_Nq_Analit))
+            print(f'Houve sobreposicao de ICs: {sobreposicaoVW}')
+            print('---//---')            
+            print("E[Nq] = %.4f" % (centroMNq))            
             print("I.C. de E[Nq] = %.4f ate %.4f" % (infM_Nq, supM_Nq))
+            print("E[Nq] analitico = %.4f" % (e_Nq_Analit))
             print("Precisao do I.C. de E[Nq] = %.4f" % (precE_Nq))
-            '''
+            print('---//---')
             print("V(Nq) = %.4f" % (centroVNq))
+            print("I.C. de V(Nq) = %.4f ate %.4f" % (infV_Nq, supV_Nq))
             print("V(Nq) analitico = %.4f" % (v_Nq_Analit))
-            print("I.C. de V(Nq) = %.4f ate %.4f" % (min(infV_Nq, supV_Nq), (max(infV_Nq, supV_Nq))))
             print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))
-            '''
+            print(f'Houve sobreposicao de ICs: {sobreposicaoVNq}')
 
             print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
             print(okMW, okVW, okMNq, okVNq)
             if (okMW==True and okVW==True and okMNq==True and okVNq==True):
-                '''
-                print(f'Resultados com lambda = {lamb}, k = {k}')
-                print(f'Tempo médio de espera na fila = {centroMW}')
-                print(f'I.C. de espera na fila = {infM_W} até {supM_W}')
-                print(f'Tamanho do I.C. do tempo médio na fila = {supM_W-infM_W}')
-                print(f'Variância média de espera na fila = {centroVW}')
-                print(f'I.C. da variância do tempo na fila = {min(infV_W, supV_W)} até {max(infV_W, supV_W)}')
-                print(f'Nq médio da fila = {centroMNq}')
-                print(f'I.C. de Nq = {infM_Nq} até {supM_Nq}')
-                print(f'Variância média de Nq = {centroVNq}')
-                print(f'I.C. da variância de Nq = {min(infV_Nq, supV_Nq)} até {max(infV_Nq, supV_Nq)}')
-                '''
+
                 print(f'proxima semente: {random.random()}')
                 
 
