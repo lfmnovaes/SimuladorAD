@@ -125,11 +125,12 @@ class Simulador(object):
         centro = inferior + (superior - inferior)/2
         #precisao_tstudent = tStudent*(s/mean*math.sqrt(n))
         precisao_tstudent = (superior - inferior) / (superior + inferior)
+        '''
         print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n}; s:{s}')
         print(f'media de sigmaChapeu^2: {mean}; precTStudent: {precisao_tstudent}')
         print(f'inf:{inferior}; sup:{superior}; centro:{centro}')
+        '''
         if precisao_tstudent < 0.15:
-            print(f'saiu da fTransiente com {self.clientes_atendidos_rodada_inc} clientes')
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
@@ -200,7 +201,6 @@ class Simulador(object):
                         self.clientes_atendidos_rodada_inc = 0
                         self.e_Wij.zeraValores()
                         self.e_V_W.zeraValores()
-                        self.P_Nq = [0 for i in range(k)] 
 
                 else:
                     self.calculaNq()
@@ -214,7 +214,6 @@ class Simulador(object):
                     self.somaW = 0.0
                     self.clientes_atendidos_rodada_inc = 0
                     self.e_Wij.zeraValores()
-                    self.P_Nq = [0 for i in range(k)] 
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
                     '''
@@ -225,8 +224,8 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.6]
+    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    #valores_rho = [0.6]
     mu = 1
     n_rodadas = 3200
     inicioSim = datetime.now()
@@ -234,7 +233,7 @@ if __name__ == '__main__':
     print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
-        k_min = [3000]
+        k_min = [1000]
         okMW = okMNq = okVW = okVNq = sobreposicaoVW = sobreposicaoVNq = False
         k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
         for k in k_min:
@@ -266,11 +265,11 @@ if __name__ == '__main__':
                 if okMNq:
                     k_min_ENq = k                
             if not okVW:
-                infV_W, supV_W, centroVW, okVW, precV_W, sobreposicaoVW = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
+                infV_W, supV_W, centroVW, okVW, precV_W, centroVWT, precV_WT, sobreposicaoVW = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
                 if okVW:
                     k_min_VW = k                
             if not okVNq:    
-                infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq, sobreposicaoVNq = c.ICVariancia(s.e_V_Nq.get_muChapeu(),s.e_V_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
+                infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq, centroVNqT, precV_NqT, sobreposicaoVNq = c.ICVariancia(s.e_V_Nq.get_muChapeu(),s.e_V_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
                 if okVNq:
                     k_min_VNq = k                
 
@@ -288,7 +287,9 @@ if __name__ == '__main__':
             print("V(W) = %.4f" % (centroVW))
             print("I.C. de V(W) = %.4f ate %.4f" % (infV_W, supV_W))
             print("V(W) analitico = %.4f" % (v_w_Analit))
+            print("V(W)[ centro t-Student ] = %.4f" % (centroVWT))
             print("Precisao do IC de V(W) = %.4f" % (precV_W))
+            print("Precisao do IC de V(W) t-Student = %.4f" % (precV_WT))
             print(f'Houve sobreposicao de ICs: {sobreposicaoVW}')
             print(f'K min: {k_min_VW}')
             print('---//---')            
@@ -301,7 +302,9 @@ if __name__ == '__main__':
             print("V(Nq) = %.4f" % (centroVNq))
             print("I.C. de V(Nq) = %.4f ate %.4f" % (infV_Nq, supV_Nq))
             print("V(Nq) analitico = %.4f" % (v_Nq_Analit))
-            print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))
+            print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))            
+            print("V(W)[ centro t-Student ] = %.4f" % (centroVNqT))
+            print("Precisao do IC de V(Nq) t-Student = %.4f" % (precV_NqT))            
             print(f'Houve sobreposicao de ICs: {sobreposicaoVNq}')
             print(f'K min: {k_min_VNq}')
 

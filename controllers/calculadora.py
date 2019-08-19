@@ -65,19 +65,19 @@ class Calculadora(object):
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
         p_tStudent = tStudent*(s/(media*nQuad))
         #print(f'precisao tStudent: {p_tStudent}')
-        print(f'IC Var T; sup: {supT}; inf: {infT}; centro: {centroT}')
+        #print(f'IC Var T; sup: {supT}; inf: {infT}; centro: {centroT}')
         # Verificar se ha sobreposicao completa das duas ICs calculadas
         if (infT <= centroChi <= supT) ==True and (infChi <= centroT <= supChi)==True:
             sobreposicaoICs = True
         #print(f'precisao chi: {p_chi2}')
-        if (p_chi2 <= self.precisaoIC) == True and (infChi <= v_analitico <= supChi)== True and (infT <= v_analitico <= supT)== True and sobreposicaoICs == True:
+        if (p_chi2 and p_tStudent <= self.precisaoIC) == True and (infChi <= v_analitico <= supChi)== True and (infT <= v_analitico <= supT)== True and sobreposicaoICs == True:
             self.ok = True
         else :
             self.ok = False
          
 
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
-        return (infChi, supChi, centroChi, self.ok, p_chi2, sobreposicaoICs)
+        return (infChi, supChi, centroChi, self.ok, p_chi2, centroT, p_tStudent, sobreposicaoICs)
 
     '''
     def ICMedia(self, lista_de_medias):
