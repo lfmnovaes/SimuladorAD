@@ -225,17 +225,18 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    #valores_rho = [0.6]
+    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    valores_rho = [0.6]
     mu = 1
-    k_min = [10000]
     n_rodadas = 3200
     inicioSim = datetime.now()
 
     print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
-        okMW = okMNq = okVW = okVNq = sobreposicaoVW, sobreposicaoVNq False
+        k_min = [3000]
+        okMW = okMNq = okVW = okVNq = sobreposicaoVW = sobreposicaoVNq = False
+        k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
         for k in k_min:
             s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
@@ -258,12 +259,20 @@ if __name__ == '__main__':
 
             if not okMW:
                 infM_W, supM_W, centroMW, okMW, precE_W = c.ICMedia(s.e_E_W.get_muChapeu(), s.e_E_W.get_sigmaChapeu(),n_rodadas, e_w_Analit)
+                if okMW:
+                    k_min_EW = k
             if not okMNq:
                 infM_Nq, supM_Nq, centroMNq, okMNq, precE_Nq = c.ICMedia(s.e_E_Nq.get_muChapeu(),s.e_E_Nq.get_sigmaChapeu(),n_rodadas, e_Nq_Analit)
+                if okMNq:
+                    k_min_ENq = k                
             if not okVW:
                 infV_W, supV_W, centroVW, okVW, precV_W, sobreposicaoVW = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
+                if okVW:
+                    k_min_VW = k                
             if not okVNq:    
                 infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq, sobreposicaoVNq = c.ICVariancia(s.e_V_Nq.get_muChapeu(),s.e_V_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
+                if okVNq:
+                    k_min_VNq = k                
 
 
             #print(okMW, okVW, okMNq, okVNq)
@@ -274,37 +283,39 @@ if __name__ == '__main__':
             print("I.C. de E[W] = %.4f ate %.4f" % (infM_W,supM_W))
             print("E[W] analitico = %.4f" % (e_w_Analit))
             print("Precisao do I.C. do E[W] = %.4f" % (precE_W))
+            print(f'K min: {k_min_EW}')
             print('---//---')
             print("V(W) = %.4f" % (centroVW))
             print("I.C. de V(W) = %.4f ate %.4f" % (infV_W, supV_W))
             print("V(W) analitico = %.4f" % (v_w_Analit))
             print("Precisao do IC de V(W) = %.4f" % (precV_W))
             print(f'Houve sobreposicao de ICs: {sobreposicaoVW}')
+            print(f'K min: {k_min_VW}')
             print('---//---')            
             print("E[Nq] = %.4f" % (centroMNq))            
             print("I.C. de E[Nq] = %.4f ate %.4f" % (infM_Nq, supM_Nq))
             print("E[Nq] analitico = %.4f" % (e_Nq_Analit))
             print("Precisao do I.C. de E[Nq] = %.4f" % (precE_Nq))
+            print(f'K min: {k_min_ENq}')
             print('---//---')
             print("V(Nq) = %.4f" % (centroVNq))
             print("I.C. de V(Nq) = %.4f ate %.4f" % (infV_Nq, supV_Nq))
             print("V(Nq) analitico = %.4f" % (v_Nq_Analit))
             print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))
             print(f'Houve sobreposicao de ICs: {sobreposicaoVNq}')
+            print(f'K min: {k_min_VNq}')
 
             print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
             print(okMW, okVW, okMNq, okVNq)
             if (okMW==True and okVW==True and okMNq==True and okVNq==True):
-
-                print(f'proxima semente: {random.random()}')
-                
-
                 #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
                 #c.myPlot(n_rodadas, pessoas_na_fila)
+                print('Novo Lambda')
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
-                #k_min.append(k+100)
-                #print(f'Novo valor de k = {k_min}')
+                k_min.append(k+100)
+                print(f'Novo valor de k = {k_min}')
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
+    print(f'proxima semente: {random.random()}')
