@@ -23,7 +23,7 @@ class Calculadora(object):
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
         p_tStudent = tStudent*(s/(media*nQuad))
         #print(f'precisao tStudent: {p_tStudent}')
-        if (p_tStudent <= self.precisaoIC) == True and (inf < v_analitico)== True and (sup > v_analitico)== True:
+        if (p_tStudent <= self.precisaoIC) == True and (inf <= v_analitico)== True and (sup >= v_analitico)== True:
             self.ok = True
         else :
             self.ok = False
@@ -35,6 +35,7 @@ class Calculadora(object):
         # Qui-quadrado para medir a variância
         #s  = math.sqrt(variancia)
         s_quadrado = media
+        sobreposicaoICs = False
 
         # Usando função auxiliar (chi2.isf) para calcular o valor de qui-quadrado para n = 3200
         qui2Alpha = chi2.isf(q=0.025, df=n-1)
@@ -43,26 +44,40 @@ class Calculadora(object):
         
 
         # Calculo do IC para qui-quadrado
-        sup = ((n-1)*s_quadrado)/qui2MenosAlpha
-        inf = ((n-1)*s_quadrado)/qui2Alpha
-        centro = inf + (sup - inf)/2.0
+        supChi = ((n-1)*s_quadrado)/qui2MenosAlpha
+        infChi = ((n-1)*s_quadrado)/qui2Alpha
+        centroChi = infChi + (supChi - infChi)/2.0
 
         p_chi2 = (qui2Alpha - qui2MenosAlpha)/ (qui2Alpha + qui2MenosAlpha)
 
+        # Calcula o IC da variancia pela tStudent
+        nQuad = math.sqrt(n)
+        s = math.sqrt(variancia)
+        tStudent = 1.960 # T-student para n>30 amostras
+
+
+        # Variância das amostras: SOMA((Media - Media das amostras)^2) = S^2
+        #s = math.sqrt(np.sum([(float(element) - float(media))**2 for element in lista_de_medias])/(n-1.0))
+        infT = media - (tStudent*(s/nQuad)) # IC(inferior) pela T-student
+        supT = media + (tStudent*(s/nQuad)) # IC(superior) pela T-student
+        centroT = infT + (supT - infT)/2.0 # Centro dos intervalos
+
+        # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
+        p_tStudent = tStudent*(s/(media*nQuad))
+        #print(f'precisao tStudent: {p_tStudent}')
+        print(f'IC Var T; sup: {supT}; inf: {infT}; centro: {centroT}')
+        # Verificar se ha sobreposicao completa das duas ICs calculadas
+        if (infT <= centroChi <= supT) ==True and (infChi <= centroT <= supChi)==True:
+            sobreposicaoICs = True
         #print(f'precisao chi: {p_chi2}')
-        if (p_chi2 <= self.precisaoIC) == True and (inf < v_analitico)== True and (sup > v_analitico)== True:
+        if (p_chi2 <= self.precisaoIC) == True and (infChi <= v_analitico <= supChi)== True and (infT <= v_analitico <= supT)== True and sobreposicaoICs == True:
             self.ok = True
         else :
             self.ok = False
-        
-        ###  TESTE MUDAR !!
-        self.ok = True
-        
-        
-        #print(f'sup= {sup}; inf={inf}; v_anal={v_analitico}; ok={self.ok}')
-        #print(f'sup > v_anal? {sup>v_analitico}; inf<v_anal?{inf<v_analitico};')
+         
+
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
-        return (inf, sup, centro, self.ok, p_chi2)
+        return (infChi, supChi, centroChi, self.ok, p_chi2)
 
     '''
     def ICMedia(self, lista_de_medias):

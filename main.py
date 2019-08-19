@@ -166,7 +166,6 @@ class Simulador(object):
                 self.tempo = evento_atual.tempo_evento #atualiza o tempo global para o tempo em que o evento está acontecendo
                 evento_atual.cliente.tempo_termino_servico = self.tempo #cliente recebe seu tempo de saída de acordo com o tempo que ocasionou a sua saída
                 # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
-                #self.somaW += evento_atual.cliente.tempoEmEspera()
                 self.e_Wij.adicionaValor(evento_atual.cliente.tempoEmEspera())
                 if self.transiente:
                     #print(f'sigmaChapeu^2 atual: {self.e_Wij.get_sigmaChapeu()}')
@@ -192,9 +191,8 @@ class Simulador(object):
                 self.servidor_ocupado = True
 
             if self.clientes_atendidos_rodada_inc >= (self.k_atual):
-                #print(f'diferenca para valor analitico: {abs(self.e_V_W.get_sigmaChapeu() - self.v_w_Analit)}')
                 if self.transiente :
-                    if self.clientes_atendidos_rodada_inc >= (self.k_atual*10):
+                    if self.clientes_atendidos_rodada_inc >= (self.k_atual*5):
                         self.testeFaseTransiente()
                     #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
                     #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
@@ -227,10 +225,10 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    #valores_rho = [0.9]
+    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    valores_rho = [0.4]
     mu = 1
-    k_min = [10000]
+    k_min = [3500]
     n_rodadas = 3200
     inicioSim = datetime.now()
     print(f'Simulação com disciplina {disciplina.upper()}')
