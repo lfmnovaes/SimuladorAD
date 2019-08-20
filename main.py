@@ -225,8 +225,9 @@ class Simulador(object):
                     '''
 
 if __name__ == '__main__':
-    #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.2, 0.4, 0.6]
+    valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
+    #valores_rho = [0.2, 0.4, 0.6]
+    k_inicial = 100
     mu = 1
     n_rodadas = 3200
     #define semente de execucao
@@ -237,7 +238,7 @@ if __name__ == '__main__':
     print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
-        k_min =  [100, 200, 300, 400, 500, 600]
+        k_min =  [k_inicial]
         okMW = okMNq = okVW = okVNq = sobreposicaoVW = sobreposicaoVNq = False
         k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
         for k in k_min:
@@ -319,12 +320,12 @@ if __name__ == '__main__':
                 #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
                 #c.myPlot(n_rodadas, pessoas_na_fila)
                 #print('Novo Lambda')
-            '''
+            
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)
                 print(f'Novo valor de k = {k_min}')
-            '''    
+                
             
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
     print(f'semente utilizada: {r}; proxima semente: {random.random()}')
