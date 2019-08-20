@@ -22,7 +22,6 @@ class Calculadora(object):
 
         # Se intervalo for maior do que 10% do valor central(precisão de 5%), não atingiu precisão adequada
         p_tStudent = tStudent*(s/(media*nQuad))
-        #print(f'precisao tStudent: {p_tStudent}')
         if (p_tStudent <= self.precisaoIC) == True and (inf <= v_analitico)== True and (sup >= v_analitico)== True:
             self.ok = True
         else :
@@ -75,9 +74,9 @@ class Calculadora(object):
         else :
             self.ok = False
          
-
+        print((p_chi2 and p_tStudent <= self.precisaoIC), (infChi <= v_analitico <= supChi), (infT <= v_analitico <= supT), sobreposicaoICs )
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
-        return (infChi, supChi, centroChi, self.ok, p_chi2, centroT, p_tStudent, sobreposicaoICs)
+        return (infChi, supChi, centroChi, self.ok, p_chi2, centroT, p_tStudent, infT, supT, sobreposicaoICs)
 
     '''
     def ICMedia(self, lista_de_medias):
