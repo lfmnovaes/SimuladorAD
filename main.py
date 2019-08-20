@@ -125,12 +125,13 @@ class Simulador(object):
         centro = inferior + (superior - inferior)/2
         #precisao_tstudent = tStudent*(s/mean*math.sqrt(n))
         precisao_tstudent = (superior - inferior) / (superior + inferior)
-        '''
-        print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n}; s:{s}')
-        print(f'media de sigmaChapeu^2: {mean}; precTStudent: {precisao_tstudent}')
-        print(f'inf:{inferior}; sup:{superior}; centro:{centro}')
-        '''
-        if precisao_tstudent < 0.15:
+        
+        print(f'k:{self.clientes_atendidos_rodada_inc}; compara sigma Chapeu de amostras de  V(W): {s}; V(Nq): {math.sqrt(self.e_V_Nq.get_sigmaChapeu())}')
+        #print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n}; s:{s}')
+        #print(f'media de sigmaChapeu^2: {mean}; precTStudent: {precisao_tstudent}')
+        #print(f'inf: {inferior}; sup: {superior}; centro: {centro}')
+
+        if precisao_tstudent < 0.01:
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
@@ -146,7 +147,7 @@ class Simulador(object):
         r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
         self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
         '''
-        self.defineSemente(0.6746581221643905)
+        self.defineSemente(0.35567153820532993)
         
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
@@ -165,6 +166,7 @@ class Simulador(object):
                 if self.transiente:
                     #print(f'sigmaChapeu^2 atual: {self.e_Wij.get_sigmaChapeu()}')
                     self.e_V_W.adicionaValor(self.e_Wij.get_sigmaChapeu())
+                    self.calculaNq()
                
                 self.servidor_ocupado = False #servidor deixa de estar ocupado
                 self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
@@ -187,7 +189,7 @@ class Simulador(object):
 
             if self.clientes_atendidos_rodada_inc >= (self.k_atual):
                 if self.transiente :
-                    if self.clientes_atendidos_rodada_inc >= (self.k_atual*5):
+                    if self.clientes_atendidos_rodada_inc >= (self.k_atual):
                         self.testeFaseTransiente()
                     #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
                     #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
@@ -233,7 +235,7 @@ if __name__ == '__main__':
     print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
-        k_min = [15000]
+        k_min = [150]
         okMW = okMNq = okVW = okVNq = sobreposicaoVW = sobreposicaoVNq = False
         k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
         for k in k_min:
@@ -241,6 +243,8 @@ if __name__ == '__main__':
             c = Calculadora()
 
             s.iniciaProcesso()
+           
+            '''
 
             #E_Nq = s.E_Nq_por_rodada
             #E_W = s.E_W_por_rodada
@@ -322,5 +326,7 @@ if __name__ == '__main__':
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)
                 print(f'Novo valor de k = {k_min}')
+            '''
+
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
     print(f'proxima semente: {random.random()}')
