@@ -74,7 +74,7 @@ class Calculadora(object):
         else :
             self.ok = False
          
-        print((p_chi2 and p_tStudent <= self.precisaoIC), (infChi <= v_analitico <= supChi), (infT <= v_analitico <= supT), sobreposicaoICs )
+        #print((p_chi2 and p_tStudent <= self.precisaoIC), (infChi <= v_analitico <= supChi), (infT <= v_analitico <= supT), sobreposicaoICs )
         # retorna o limite inferior, limite superior, o valor central e se está dentro do intervalo
         return (infChi, supChi, centroChi, self.ok, p_chi2, centroT, p_tStudent, infT, supT, sobreposicaoICs)
 

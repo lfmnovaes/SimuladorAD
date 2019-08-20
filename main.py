@@ -60,7 +60,8 @@ class Simulador(object):
         self.somaW = 0.0
         #Incrementa conforme os cliente forem atendidos
         # (mais rapido que percorrer lista self.clientes_atendidos_rodada = [])
-        self.clientes_atendidos_rodada_inc = 0    
+        self.clientes_atendidos_rodada_inc = 0  
+        self.r =  0.8067697303247167
 
     def defineSemente(self, semente):
         random.seed(semente)
@@ -146,7 +147,7 @@ class Simulador(object):
         r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
         self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
         '''
-        self.defineSemente(0.6746581221643905)
+        #self.defineSemente(self.r)
         
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
@@ -225,15 +226,18 @@ class Simulador(object):
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.9]
+    valores_rho = [0.2, 0.4, 0.6]
     mu = 1
     n_rodadas = 3200
+    #define semente de execucao
+    r = 0.8067697303247167
+    random.seed(r)
     inicioSim = datetime.now()
 
     print(f'Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
-        k_min = [15000]
+        k_min =  [100, 200, 300, 400, 500, 600]
         okMW = okMNq = okVW = okVNq = sobreposicaoVW = sobreposicaoVNq = False
         k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
         for k in k_min:
@@ -242,10 +246,6 @@ if __name__ == '__main__':
 
             s.iniciaProcesso()
 
-            #E_Nq = s.E_Nq_por_rodada
-            #E_W = s.E_W_por_rodada
-            #tempos = [t.tempoEmEspera() for t in s.todos_clientes_atendidos]
-            #pessoas_na_fila = s.qtdPessoasNaFilaPorRodada
             # Lista contendo valores analiticos.
             if disciplina == "lcfs":
                 v_w_Analit = (2*lamb - lamb**2 + lamb**3)/(1-lamb)**3 
@@ -304,7 +304,7 @@ if __name__ == '__main__':
             print("I.C. de V(Nq) = %.4f ate %.4f" % (infV_Nq, supV_Nq))
             print("V(Nq) analitico = %.4f" % (v_Nq_Analit))
             print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))            
-            print("V(W)[ centro t-Student ] = %.4f" % (centroVNqT))
+            print("V(Nq)[ centro t-Student ] = %.4f" % (centroVNqT))
             print("I.C. de V(Nq) t-Student = %.4f ate %.4f" % (infV_NqT, supV_NqT))
             print("Precisao do IC de V(Nq) t-Student = %.4f" % (precV_NqT))            
             print(f'Houve sobreposicao de ICs: {sobreposicaoVNq}')
@@ -312,15 +312,19 @@ if __name__ == '__main__':
 
             print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
             print(okMW, okVW, okMNq, okVNq)
-            if (okMW==True and okVW==True and okMNq==True and okVNq==True):
+            #if (okMW==True and okVW==True and okMNq==True and okVNq==True):
+            #if (okMW==True and okMNq==True):
                 #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
                 #c.myPlot(n_rodadas, pessoas_na_fila)
-                print('Novo Lambda')
+                #print('Novo Lambda')
+            '''
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)
                 print(f'Novo valor de k = {k_min}')
+            '''    
+            
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
-    print(f'proxima semente: {random.random()}')
+    print(f'semente utilizada: {r}; proxima semente: {random.random()}')
