@@ -226,12 +226,13 @@ class Simulador(object):
 
 if __name__ == '__main__':
     valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    #valores_rho = [0.2, 0.4, 0.6]
-    k_inicial = 100
+    #valores_rho = [0.9]
+    k_inicial = 8900
     mu = 1
     n_rodadas = 3200
     #define semente de execucao
-    r = 0.8067697303247167
+    # semente 1 0.8067697303247167
+    r = 0.6914235947085864
     random.seed(r)
     inicioSim = datetime.now()
 
@@ -312,19 +313,20 @@ if __name__ == '__main__':
             print(f'K min: {k_min_VNq}')
 
             print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
-            print(okMW, okVW, okMNq, okVNq)
-            #if (okMW==True and okVW==True and okMNq==True and okVNq==True):
+            
+            #print(okMW, okVW, okMNq, okVNq)
+            if (okMW==True and okVW==True and okMNq==True and okVNq==True):
             #if (okMW==True and okMNq==True):
                 #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
                 #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
                 #c.myPlot(n_rodadas, pessoas_na_fila)
-                #print('Novo Lambda')
+                print('Novo Lambda')
             
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)
-                print(f'Novo valor de k = {k_min}')
+                #print(f'Novo valor de k = {k_min}')
                 
             
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
