@@ -231,8 +231,10 @@ if __name__ == '__main__':
     mu = 1
     n_rodadas = 3200
     #define semente de execucao
-    # semente 1 0.8067697303247167
-    r = 0.6914235947085864
+    
+    # FCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.8159484329221927
+    # LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.13793458642458434
+    r = 0.8159484329221927
     random.seed(r)
     inicioSim = datetime.now()
 
