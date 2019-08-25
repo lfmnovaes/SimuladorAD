@@ -10,6 +10,7 @@ from models.cliente import *
 
 parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
+parser.add_argument('lambd', type=float, default=0.2, help='lambda')
 args = parser.parse_args()
 
 if args.disciplina.lower() == "lcfs":
@@ -226,7 +227,8 @@ class Simulador(object):
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
-    valores_rho = [0.2]
+    valores_rho = []
+    valores_rho.append(float(args.lambd))
     k_inicial = 100
     mu = 1
     n_rodadas = 3200
