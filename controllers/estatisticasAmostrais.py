@@ -1,6 +1,6 @@
 class EstatisticasAmostrais(object):
     def __init__(self):
-        self.soma = self.somaQuad = self.n = self.x = 0.0
+        self.soma = self.somaQuad = self.n = self.x = self.k = 0.0
     
     def zeraValores(self):
         self.soma = self.somaQuad = self.n = self.x = 0.0
