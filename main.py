@@ -11,6 +11,7 @@ from models.cliente import *
 parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 parser.add_argument('lambd', type=float, default=0.2, help='lambda')
+parser.add_argument('k_inicial', type=float, default=3000, help='Valor de k (tamanho da rodada) inicial (padrao 3000) ')
 args = parser.parse_args()
 
 if args.disciplina.lower() == "lcfs":
@@ -226,7 +227,7 @@ if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = []
     valores_rho.append(float(args.lambd))
-    k_inicial = 100
+    k_inicial = float(args.k_inicial)
     mu = 1
     n_rodadas = 3200
     #define semente de execucao
@@ -235,7 +236,7 @@ if __name__ == '__main__':
     # LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.13793458642458434
     # Com graphs   FCFS: semente utilizada: 0.6914235947085864; prox.    0.7987046076819015
     # Com graphs   LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.45547483774307906
-    r = 0.45547483774307906
+    r = 0.6914235947085864
     random.seed(r)
     inicioSim = datetime.now()
 
