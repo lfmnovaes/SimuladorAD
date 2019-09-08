@@ -136,7 +136,7 @@ class Simulador(object):
         print(f'inf:{inferior}; sup:{superior}; centro:{centro}')
         '''
         # precisao = 0.0045 ?
-        if precisao_tstudent < 0.01:
+        if precisao_tstudent < 0.005:
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
@@ -197,19 +197,19 @@ class Simulador(object):
 
             if self.clientes_atendidos_rodada_inc >= (self.k_atual):
                 if self.transiente :
-                    #if self.clientes_atendidos_rodada_inc >= (self.k_atual*5):
-                    self.testeFaseTransiente(self.e_V_W)
-                #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
-                #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
-                    if not self.transiente:
-                        self.rodada_atual += 1
-                        self.tempo_inicio_rodada = self.tempo
-                        self.area_clientes_tempo = 0
-                        self.area_clientes_tempoQuad = 0
-                        self.somaW = 0.0
-                        self.clientes_atendidos_rodada_inc = 0
-                        self.e_Wij.zeraValores()
-                        self.e_V_W.zeraValores()
+                    if self.clientes_atendidos_rodada_inc >= (self.k_atual*5):
+                        self.testeFaseTransiente(self.e_V_W)
+                    #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
+                    #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
+                        if not self.transiente:
+                            self.rodada_atual += 1
+                            self.tempo_inicio_rodada = self.tempo
+                            self.area_clientes_tempo = 0
+                            self.area_clientes_tempoQuad = 0
+                            self.somaW = 0.0
+                            self.clientes_atendidos_rodada_inc = 0
+                            self.e_Wij.zeraValores()
+                            self.e_V_W.zeraValores()
 
                 else:
                     self.calculaNq()
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     # LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.13793458642458434
     # Com graphs   FCFS: semente utilizada: 0.6914235947085864; prox.    0.7987046076819015
     # Com graphs   LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.45547483774307906
-    r = 0.6914235947085864
+    r = 0.8159484329221927
     random.seed(r)
     inicioSim = datetime.now()
 
