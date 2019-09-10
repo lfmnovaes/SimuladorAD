@@ -11,6 +11,7 @@ from models.cliente import *
 parser = argparse.ArgumentParser(description='Simulação FCFS/LCFS')
 parser.add_argument('disciplina', help='disciplina de atendimento (padrão FCFS)')
 parser.add_argument('lambd', type=float, default=0.2, help='lambda')
+parser.add_argument('k_inicial', type=float, default=3000, help='Valor de k (tamanho da rodada) inicial (padrao 3000) ')
 args = parser.parse_args()
 
 if args.disciplina.lower() == "lcfs":
@@ -33,14 +34,18 @@ class Simulador(object):
         ##### LISTAS #####
         self.eventos = [] #lista de eventos que vai comandar a ordem em que acontecem as chegadas e saídas
         self.fila_de_clientes = [] #lista que armazenará clientes até serem atendidos
-        self.todos_clientes_atendidos = [] #lista de todos os clientes atendidos
+        #self.todos_clientes_atendidos = [] #lista de todos os clientes atendidos
         self.qtdPessoasNaFilaPorRodada = [] #lista de pessoas na fila de espera por rodada
         self.E_W_por_rodada = [] #tempo médio gasto na fila de espera por rodada
         self.E_Nq_por_rodada = [] #tamanho médio da fila de espera por rodada
-        self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
+        #self.clientes_atendidos_rodada = [] #lista de clientes completos por rodada
         # P_Nq e a estrutura que armazena uma quantidade de clientes na fila e o intervalo de tempo que a fila permanexe com essa quantidade
         # Essa estrutura sera importante para gerar a pmf de Nq e conseguentemente calcular V(Nq)
         #self.P_Nq = [0 for i in range(k)] 
+        #self.V_W = []
+        #self.VW_rodada =[]
+        #self.VNq_rodada = []
+
         
         #self.sementesUsadas = [] #armazena sequencia de sementes usadas
         #self.distanciaSementes = 0.0001 # Define distancia para sementes usadas.
@@ -94,10 +99,10 @@ class Simulador(object):
         # chama funcao para adicionar valor para estatisticas
         E_Nq = self.area_clientes_tempo/tempo_da_rodada
         E_Nq_2 = self.area_clientes_tempoQuad/tempo_da_rodada
+        VNqi = E_Nq_2 - E_Nq**2
         self.e_E_Nq.adicionaValor(E_Nq)
-        self.e_V_Nq.adicionaValor(E_Nq_2 - E_Nq**2)
-        #print(f'tempoRodada: {tempo_da_rodada}; somatorio dos tempos da lista: {sum(self.P_Nq)}')
-        #print(f'V(Nqi)= {somQuad/tempo_da_rodada - ((soma/tempo_da_rodada)*(soma/tempo_da_rodada))}')
+        self.e_V_Nq.adicionaValor(VNqi)
+        #self.VNq_rodada.append(VNqi)
 
     def inserirEventoEmOrdem(self, evento): #insere e ordena
         self.eventos.append(evento)
@@ -111,16 +116,14 @@ class Simulador(object):
         tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_servico)
         return Evento("evento_saida", cliente, tempo_evento, self.rodada_atual)
 
-    def testeFaseTransiente(self):
-        n = self.e_V_W.n
+    def testeFaseTransiente(self, est_metrica):
+        n = est_metrica.n
         tStudent = c.tstudent(0.95, n-1)
-        #print(f' len e k_inc: {len(self.clientes_atendidos_rodada)} = {self.clientes_atendidos_rodada_inc}  ------')
-        #print("Valor de %f: , t-student: %f" % (n, tStudent))
         # Média amostral
-        mean = self.e_V_W.get_muChapeu()
+        mean = est_metrica.get_muChapeu()
         #print(f'mean = {mean}')
         # desvio padrao 
-        s = math.sqrt(self.e_V_W.get_sigmaChapeu())
+        s = math.sqrt(est_metrica.get_sigmaChapeu())
         # cálculo do I.C. pela T-student
         inferior = mean - (tStudent*(s/math.sqrt(n)))
         superior = mean + (tStudent*(s/math.sqrt(n)))
@@ -128,20 +131,24 @@ class Simulador(object):
         #precisao_tstudent = tStudent*(s/mean*math.sqrt(n))
         precisao_tstudent = (superior - inferior) / (superior + inferior)
         '''
-        print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n}; s:{s}')
+        print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n};')
         print(f'media de sigmaChapeu^2: {mean}; precTStudent: {precisao_tstudent}')
         print(f'inf:{inferior}; sup:{superior}; centro:{centro}')
         '''
-        if precisao_tstudent < 0.15:
+        # precisao = 0.0045 ?
+        if precisao_tstudent < 0.005:
             self.transiente = False
 
     def adicionaE_WDaRodada(self):
         k = self.clientes_atendidos_rodada_inc
+        VWi = self.e_Wij.get_sigmaChapeu()
         # chama funcao para adicionar media dos k clientes da rodada na classe que calcula de forma incremental os estimadores da media e da variancia 
         self.e_E_W.adicionaValor(self.e_Wij.get_muChapeu())
         # chama funcao para adicionar a variancia dos tempos de espera dos k clientes da rodada. 
         # Essa classe fornece a media dessas variancias para calculo da IC da variancia posteriormente
-        self.e_V_W.adicionaValor(self.e_Wij.get_sigmaChapeu())
+        
+        self.e_V_W.adicionaValor(VWi)
+        #self.VW_rodada.append(VWi)
         
     def iniciaProcesso(self):
         '''
@@ -165,12 +172,13 @@ class Simulador(object):
                 # incrementa variavel acumuladora do somatorio de todos os W dos clientes atendidos
                 self.e_Wij.adicionaValor(evento_atual.cliente.tempoEmEspera())
                 if self.transiente:
-                    #print(f'sigmaChapeu^2 atual: {self.e_Wij.get_sigmaChapeu()}')
                     self.e_V_W.adicionaValor(self.e_Wij.get_sigmaChapeu())
+                    #self.V_W.append(self.e_Wij.get_sigmaChapeu())
+
                
                 self.servidor_ocupado = False #servidor deixa de estar ocupado
-                self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
-                self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
+                #self.todos_clientes_atendidos.append(evento_atual.cliente) #adicionando na lista de todos os clientes atendidos
+                #self.clientes_atendidos_rodada.append(evento_atual.cliente) #adicionando a lista de clientes atendidos nesta rodada
                 self.clientes_atendidos_rodada_inc += 1
 
             self.somaArea() #cálculo da area de pessoas por tempo para ser utilizado para calcular E_Nq_por_rodada
@@ -190,27 +198,23 @@ class Simulador(object):
             if self.clientes_atendidos_rodada_inc >= (self.k_atual):
                 if self.transiente :
                     if self.clientes_atendidos_rodada_inc >= (self.k_atual*5):
-                        self.testeFaseTransiente()
+                        self.testeFaseTransiente(self.e_V_W)
                     #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
                     #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
-                    if not self.transiente:
-                        self.rodada_atual += 1
-                        self.clientes_atendidos_rodada = []
-                        self.tempo_inicio_rodada = self.tempo
-                        self.area_clientes_tempo = 0
-                        self.area_clientes_tempoQuad = 0
-                        self.somaW = 0.0
-                        self.clientes_atendidos_rodada_inc = 0
-                        self.e_Wij.zeraValores()
-                        self.e_V_W.zeraValores()
+                        if not self.transiente:
+                            self.rodada_atual += 1
+                            self.tempo_inicio_rodada = self.tempo
+                            self.area_clientes_tempo = 0
+                            self.area_clientes_tempoQuad = 0
+                            self.somaW = 0.0
+                            self.clientes_atendidos_rodada_inc = 0
+                            self.e_Wij.zeraValores()
+                            self.e_V_W.zeraValores()
 
                 else:
                     self.calculaNq()
-                    #print(f'clientes atendidos na rodada: {str(len(self.clientes_atendidos_rodada))}')
-                    #print(f'rodada: {self.rodada_atual}')
                     self.adicionaE_WDaRodada()
                     #print(f'sigmaChapeuQuad: {self.e_V_Nq.get_sigmaChapeu()}')
-                    self.clientes_atendidos_rodada = [] #limpar os clientes da rodada
                     self.area_clientes_tempo = 0
                     self.area_clientes_tempoQuad = 0
                     self.somaW = 0.0
@@ -218,24 +222,20 @@ class Simulador(object):
                     self.e_Wij.zeraValores()
                     self.tempo_inicio_rodada = self.tempo
                     self.rodada_atual += 1 #indo para próxima rodada
-                    '''
-                    r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
-                    print(f'valor de rodada: {self.rodada_atual}')
-                    self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
-                    self.defineSemente(r)
-                    '''
 
 if __name__ == '__main__':
     #valores_rho = [0.2, 0.4, 0.6, 0.8, 0.9] #vetor de valores rho dado pelo enunciado
     valores_rho = []
     valores_rho.append(float(args.lambd))
-    k_inicial = 100
+    k_inicial = float(args.k_inicial)
     mu = 1
     n_rodadas = 3200
     #define semente de execucao
     
     # FCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.8159484329221927
     # LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.13793458642458434
+    # Com graphs   FCFS: semente utilizada: 0.6914235947085864; prox.    0.7987046076819015
+    # Com graphs   LCFS: semente utilizada: 0.6914235947085864; proxima semente: 0.45547483774307906
     r = 0.8159484329221927
     random.seed(r)
     inicioSim = datetime.now()
@@ -246,6 +246,24 @@ if __name__ == '__main__':
         k_min =  [k_inicial]
         okMW = okMNq = okVW = okVNq = sobreposicaoVW = sobreposicaoVNq = False
         k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
+
+        # Inicializar Listas para armazenar valores de convergencia das ICs das Variancias
+        chi2Inf_VW = []
+        chi2Sup_VW = []
+        chi2Cent_VW = []
+        tInf_VW = []
+        tSup_VW = []
+        tCent_VW = []
+        k_VW = []
+
+        chi2Inf_VNq = []
+        chi2Sup_VNq = []
+        chi2Cent_VNq = []
+        tInf_VNq = []
+        tSup_VNq = []
+        tCent_VNq = []
+        k_VNq = []
+
         for k in k_min:
             s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
@@ -272,10 +290,24 @@ if __name__ == '__main__':
                     k_min_ENq = k                
             if not okVW:
                 infV_W, supV_W, centroVW, okVW, precV_W, centroVWT, precV_WT, infV_WT, supV_WT, sobreposicaoVW = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
+                chi2Inf_VW.append(infV_W)
+                chi2Sup_VW.append(supV_W)
+                chi2Cent_VW.append(centroVW)
+                tInf_VW.append(infV_WT)
+                tSup_VW.append(supV_WT)
+                tCent_VW.append(centroVWT)
+                k_VW.append(k)
                 if okVW:
                     k_min_VW = k                
             if not okVNq:    
                 infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq, centroVNqT, precV_NqT, infV_NqT, supV_NqT, sobreposicaoVNq = c.ICVariancia(s.e_V_Nq.get_muChapeu(),s.e_V_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
+                chi2Inf_VNq.append(infV_Nq)
+                chi2Sup_VNq.append(supV_Nq)
+                chi2Cent_VNq.append(centroVNq)
+                tInf_VNq.append(infV_NqT)
+                tSup_VNq.append(supV_NqT)
+                tCent_VNq.append(centroVNqT)
+                k_VNq.append(k)
                 if okVNq:
                     k_min_VNq = k                
 
@@ -320,18 +352,74 @@ if __name__ == '__main__':
             
             #print(okMW, okVW, okMNq, okVNq)
             if (okMW==True and okVW==True and okMNq==True and okVNq==True):
-            #if (okMW==True and okMNq==True):
-                #c.plotGrafico(len(E_Nq[:500]), E_Nq[:500], disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-                #c.plotGrafico(n_rodadas, E_Nq, disciplina, "rodadas", "E_Nq", disciplina + "1_" + str(lamb))
-                #c.plotGrafico(n_rodadas, E_W, disciplina, "rodadas", "E_W", disciplina + "2_" + str(lamb))
-                #c.myPlot(n_rodadas, pessoas_na_fila)
                 print('Novo Lambda')
-            
+        
             else:
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)
                 #print(f'Novo valor de k = {k_min}')
-                
+    
+        xW = len(k_VW)
+        xNq = len(k_VNq)
+        
+        y1W = chi2Sup_VW
+        y2W = chi2Cent_VW
+        y3W = chi2Inf_VW
+
+        yt1W = tSup_VW
+        yt2W = tCent_VW
+        yt3W = tInf_VW
+
+        y1Nq = chi2Sup_VNq
+        y2Nq = chi2Cent_VNq
+        y3Nq = chi2Inf_VNq
+
+        yt1Nq = tSup_VNq
+        yt2Nq = tCent_VNq
+        y3tNq = tInf_VNq
+
+        
+        saida1 = disciplina+"_"+str(lamb)+'_vW2ndSeed'
+        saida2 = disciplina+"_"+str(lamb)+'_vNq2ndSeed'
+        f1, ax1 = plt.subplots() 
+        #plt.subplot(2,1,1)
+        ax1.plot(k_VW, y1W, color='b', label='V(W) Chi2 Sup')
+        ax1.plot(k_VW, y2W, '--', color='b',label='V(W) Chi2 Centro' )
+        ax1.plot(k_VW, y3W, color='b', label='V(W) Chi2 Inf' )
+        ax1.fill_between(k_VW,y1W,y3W, facecolor='blue', alpha=0.5)
+        ax1.plot(k_VW,yt1W, color='g', label='V(W) t-Student Sup')
+        ax1.plot(k_VW,yt2W, '--', color='g', label='V(W) t-Student Centro')
+        ax1.plot(k_VW,yt3W, color='g', label='V(W) t-Student Inf')
+        ax1.fill_between(k_VW, yt1W,yt3W, facecolor='yellow', alpha=0.5)
+        ax1.hlines(y=v_w_Analit, xmin=k_inicial, xmax=k_VW[-1], color='red', linestyles='dotted', label='V(W) analitico')
+        #ax1.legend('Limite Superior Chi2','Centro Chi2')
+        ax1.set_title(disciplina+" Rho = "+ str(lamb))
+        ax1.set_xlabel('Tamanho da rodada (k)')
+        ax1.set_ylabel('unidades de tempo')
+        legend = ax1.legend(loc='upper left')
+        f1.savefig(saida1 + '.png')
+        #plt.subplot(2,1,2)
+        f1, ax2 = plt.subplots() 
+        ax2.plot(k_VNq,y1Nq, color='c', label='V(Nq) Chi2 Sup')
+        ax2.plot(k_VNq,y2Nq, '--', color='c', label='V(Nq) Chi2 Centro')
+        ax2.plot(k_VNq,y3Nq, color='c', label='V(Nq) Chi2 Inf')
+        ax2.fill_between(k_VNq,y1Nq,y3Nq, facecolor='m', alpha=0.33)
+        ax2.plot(k_VNq,yt1Nq, color='g', label='V(Nq) t-Student Sup')
+        ax2.plot(k_VNq,yt2Nq, '--', color='g', label='V(Nq) t-Student Centro')
+        ax2.plot(k_VNq,y3tNq, color='g', label='V(Nq) t-Student Inf')
+        ax2.fill_between(k_VNq, yt1Nq,y3tNq, facecolor='yellow', alpha=0.5)
+        ax2.hlines(y=v_Nq_Analit, xmin=k_inicial, xmax=k_VNq[-1], color='red', linestyles='dotted' , label='V(Nq) analitico')
+        ax2.set_xlabel('Tamanho da rodada (k)')
+        ax2.set_ylabel('Clientes')
+    
+        legend2 = ax2.legend(loc='upper left')
+        #ax.plot(x,y)
+        #ax.set(xlabel=x_legenda, ylabel=y_legenda, title=disciplina.upper())
+        #ax.set_ylim(0, 1)
+        #ax.grid()
+                    
+        f1.savefig(saida2+ '.png')
+
             
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
     print(f'semente utilizada: {r}; proxima semente: {random.random()}')
