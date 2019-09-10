@@ -151,11 +151,6 @@ class Simulador(object):
         #self.VW_rodada.append(VWi)
         
     def iniciaProcesso(self):
-        '''
-        r = self.escolheSemente(self.sementesUsadas, self.distanciaSementes)
-        self.sementesUsadas.append(r) # Define primeira semente. A cada rodada
-        '''
-        #self.defineSemente(self.r)
         
         self.inserirEventoEmOrdem(self.geraEventoChegada(Cliente(self.rodada_atual))) #cria o 1º evento
         while self.rodada_atual < self.n_rodadas:
@@ -202,6 +197,7 @@ class Simulador(object):
                     #começa a fase transiente até convergir, com limite de 10 vezes o tamanho da rodada
                     #if not self.transiente or self.clientes_atendidos_rodada_inc > (10*self.k_atual):
                         if not self.transiente:
+                            print('LOG: Fim da fase transiente')
                             self.rodada_atual += 1
                             self.tempo_inicio_rodada = self.tempo
                             self.area_clientes_tempo = 0
@@ -212,6 +208,7 @@ class Simulador(object):
                             self.e_V_W.zeraValores()
 
                 else:
+                    print(f'rodada: {self.rodada_atual}', end='\r')
                     self.calculaNq()
                     self.adicionaE_WDaRodada()
                     #print(f'sigmaChapeuQuad: {self.e_V_Nq.get_sigmaChapeu()}')
@@ -240,7 +237,7 @@ if __name__ == '__main__':
     random.seed(r)
     inicioSim = datetime.now()
 
-    print(f'Simulação com disciplina {disciplina.upper()}')
+    print(f'LOG: Simulação com disciplina {disciplina.upper()}')
 
     for lamb in valores_rho:
         k_min =  [k_inicial]
@@ -248,6 +245,7 @@ if __name__ == '__main__':
         k_min_EW = k_min_VW = k_min_ENq = k_min_VNq = '-'
 
         # Inicializar Listas para armazenar valores de convergencia das ICs das Variancias
+        '''
         chi2Inf_VW = []
         chi2Sup_VW = []
         chi2Cent_VW = []
@@ -263,12 +261,14 @@ if __name__ == '__main__':
         tSup_VNq = []
         tCent_VNq = []
         k_VNq = []
+        '''
 
         for k in k_min:
             s = Simulador(lamb, mu, k, n_rodadas, disciplina)
             c = Calculadora()
 
             s.iniciaProcesso()
+            print('LOG: Calculando estatisticas da simulacao...')
 
             # Lista contendo valores analiticos.
             if disciplina == "lcfs":
@@ -290,6 +290,7 @@ if __name__ == '__main__':
                     k_min_ENq = k                
             if not okVW:
                 infV_W, supV_W, centroVW, okVW, precV_W, centroVWT, precV_WT, infV_WT, supV_WT, sobreposicaoVW = c.ICVariancia(s.e_V_W.get_muChapeu(), s.e_V_W.get_sigmaChapeu(),n_rodadas, v_w_Analit)
+                '''
                 chi2Inf_VW.append(infV_W)
                 chi2Sup_VW.append(supV_W)
                 chi2Cent_VW.append(centroVW)
@@ -297,10 +298,12 @@ if __name__ == '__main__':
                 tSup_VW.append(supV_WT)
                 tCent_VW.append(centroVWT)
                 k_VW.append(k)
+                '''
                 if okVW:
                     k_min_VW = k                
             if not okVNq:    
                 infV_Nq, supV_Nq, centroVNq, okVNq, precV_Nq, centroVNqT, precV_NqT, infV_NqT, supV_NqT, sobreposicaoVNq = c.ICVariancia(s.e_V_Nq.get_muChapeu(),s.e_V_Nq.get_sigmaChapeu(),n_rodadas, v_Nq_Analit)
+                '''
                 chi2Inf_VNq.append(infV_Nq)
                 chi2Sup_VNq.append(supV_Nq)
                 chi2Cent_VNq.append(centroVNq)
@@ -308,42 +311,40 @@ if __name__ == '__main__':
                 tSup_VNq.append(supV_NqT)
                 tCent_VNq.append(centroVNqT)
                 k_VNq.append(k)
+                '''
                 if okVNq:
                     k_min_VNq = k                
 
-
-            #print(okMW, okVW, okMNq, okVNq)
-
             print(f'Resultados com lambda = {lamb}, k = {k}, Disciplina: {disciplina}')
             print('---//---')
-            print("E[W] centro do IC = %.4f" % (centroMW))
-            print("I.C. de E[W] = %.4f ate %.4f" % (infM_W,supM_W))
+            print("E[W] centro do IC por t-Student = %.4f" % (centroMW))
+            print("IC de E[W] por t-Student = %.4f ate %.4f" % (infM_W,supM_W))
             print("E[W] analitico = %.4f" % (e_w_Analit))
-            print("Precisao do I.C. do E[W] = %.4f" % (precE_W))
+            print("Precisao do IC do E[W] t-Student = %.4f" % (precE_W))
             print(f'K min: {k_min_EW}')
             print('---//---')
-            print("V(W) = %.4f" % (centroVW))
-            print("I.C. de V(W) = %.4f ate %.4f" % (infV_W, supV_W))
+            print("V(W)[Centro Chi-Quadrado] = %.4f" % (centroVW))
+            print("IC de V(W) Chi-Quadrado = %.4f ate %.4f" % (infV_W, supV_W))
             print("V(W) analitico = %.4f" % (v_w_Analit))
             print("V(W)[ centro t-Student ] = %.4f" % (centroVWT))
-            print("I.C. de V(W) t-Student = %.4f ate %.4f" % (infV_WT, supV_WT))
-            print("Precisao do IC de V(W) = %.4f" % (precV_W))
+            print("IC de V(W) t-Student = %.4f ate %.4f" % (infV_WT, supV_WT))
+            print("Precisao do IC de V(W) Chi-Quadrado= %.4f" % (precV_W))
             print("Precisao do IC de V(W) t-Student = %.4f" % (precV_WT))
             print(f'Houve sobreposicao de ICs: {sobreposicaoVW}')
             print(f'K min: {k_min_VW}')
             print('---//---')            
-            print("E[Nq] = %.4f" % (centroMNq))            
-            print("I.C. de E[Nq] = %.4f ate %.4f" % (infM_Nq, supM_Nq))
+            print("E[Nq] centro do IC por t-Student = %.4f" % (centroMNq))            
+            print("IC de E[Nq] t-Student = %.4f ate %.4f" % (infM_Nq, supM_Nq))
             print("E[Nq] analitico = %.4f" % (e_Nq_Analit))
-            print("Precisao do I.C. de E[Nq] = %.4f" % (precE_Nq))
+            print("Precisao do IC de E[Nq] por t-Student = %.4f" % (precE_Nq))
             print(f'K min: {k_min_ENq}')
             print('---//---')
-            print("V(Nq) = %.4f" % (centroVNq))
-            print("I.C. de V(Nq) = %.4f ate %.4f" % (infV_Nq, supV_Nq))
-            print("V(Nq) analitico = %.4f" % (v_Nq_Analit))
-            print("Precisao do I.C. de V(Nq) = %.4f" % (precV_Nq))            
+            print("V(Nq)[Centro Chi-Quadrado]= %.4f" % (centroVNq))
+            print("IC de V(Nq) Chi-Quadrado= %.4f ate %.4f" % (infV_Nq, supV_Nq))
+            print("V(Nq) analitico = %.4f" % (v_Nq_Analit))            
             print("V(Nq)[ centro t-Student ] = %.4f" % (centroVNqT))
-            print("I.C. de V(Nq) t-Student = %.4f ate %.4f" % (infV_NqT, supV_NqT))
+            print("IC de V(Nq) t-Student = %.4f ate %.4f" % (infV_NqT, supV_NqT))
+            print("Precisao do IC de V(Nq) Chi-Quadrado = %.4f" % (precV_Nq))
             print("Precisao do IC de V(Nq) t-Student = %.4f" % (precV_NqT))            
             print(f'Houve sobreposicao de ICs: {sobreposicaoVNq}')
             print(f'K min: {k_min_VNq}')
@@ -351,6 +352,7 @@ if __name__ == '__main__':
             print(f'------ Tempo parcial de simulação: {(datetime.now() - inicioSim)} ------')
             
             #print(okMW, okVW, okMNq, okVNq)
+            '''
             if (okMW==True and okVW==True and okMNq==True and okVNq==True):
                 print('Novo Lambda')
         
@@ -358,7 +360,8 @@ if __name__ == '__main__':
                 print(f'K não satisfatório, incrementando-o em 100 para a próxima iteração')
                 k_min.append(k+100)
                 #print(f'Novo valor de k = {k_min}')
-    
+            '''
+        '''
         xW = len(k_VW)
         xNq = len(k_VNq)
         
@@ -419,6 +422,7 @@ if __name__ == '__main__':
         #ax.grid()
                     
         f1.savefig(saida2+ '.png')
+        '''
 
             
     print(f'------ Tempo total de simulação: {(datetime.now() - inicioSim)} ------')
