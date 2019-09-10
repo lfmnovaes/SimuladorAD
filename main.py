@@ -67,21 +67,7 @@ class Simulador(object):
         #Incrementa conforme os cliente forem atendidos
         # (mais rapido que percorrer lista self.clientes_atendidos_rodada = [])
         self.clientes_atendidos_rodada_inc = 0  
-        self.r =  0.8067697303247167
 
-    def defineSemente(self, semente):
-        random.seed(semente)
-
-    def escolheSemente(self, sementesUsadas, distancia):
-        newNumber = 0
-        while newNumber == 0:
-            newNumber = random.random()
-            for number in sementesUsadas:
-                if abs(newNumber - number) < distancia:
-                    newNumber = 0
-        return newNumber
-        
-    
     def simulaTempoExponencial(self, taxa):
         r = random.random()
         tempo = (-1.0 * math.log(r)) / (taxa + 0.0)
@@ -108,6 +94,7 @@ class Simulador(object):
         self.eventos.append(evento)
         self.eventos = sorted(self.eventos, key=lambda evento: evento.tempo_evento)
 
+
     def geraEventoChegada(self, cliente):
         tempo_evento = self.tempo + self.simulaTempoExponencial(self.tx_chegada)
         return Evento("evento_chegada", cliente, tempo_evento, self.rodada_atual)
@@ -130,11 +117,7 @@ class Simulador(object):
         centro = inferior + (superior - inferior)/2
         #precisao_tstudent = tStudent*(s/mean*math.sqrt(n))
         precisao_tstudent = (superior - inferior) / (superior + inferior)
-        '''
-        print(f'k:{self.clientes_atendidos_rodada_inc}; n:{n};')
-        print(f'media de sigmaChapeu^2: {mean}; precTStudent: {precisao_tstudent}')
-        print(f'inf:{inferior}; sup:{superior}; centro:{centro}')
-        '''
+
         # precisao = 0.0045 ?
         if precisao_tstudent < 0.005:
             self.transiente = False
